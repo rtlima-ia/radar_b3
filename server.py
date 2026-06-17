@@ -45,7 +45,7 @@ def get_db():
 
 # CONFIGURAÇÃO DE E-MAIL
 EMAIL_REMETENTE = "rtlima.ia@gmail.com"  # Coloque seu Gmail aqui
-SENHA_REMETENTE = "wumflgpqhfbkesso"  # Coloque sua senha de app de 16 letras aqui
+SENHA_REMETENTE = "pluntrmxwvmnodqb"  # Coloque sua senha de app de 16 letras aqui
 
 # E-mail de Confirmação de Cadastro (Ajuste 4: Incluindo Cotação Atual)
 def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
