@@ -64,7 +64,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
     msg['To'] = destino
 
     try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 587) as server:
             server.login(EMAIL_REMETENTE, SENHA_REMETENTE)
             server.send_message(msg)
     except Exception as e:
@@ -87,7 +87,7 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     msg['To'] = destino
 
     try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 587) as server:
             server.login(EMAIL_REMETENTE, SENHA_REMETENTE)
             server.send_message(msg)
     except Exception as e:
