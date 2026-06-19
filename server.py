@@ -4,8 +4,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import yfinance as yf
-import smtplib
-from email.mime.text import MIMEText
+import requests
 import asyncio
 
 # 1. Configuração do Banco de Dados
@@ -20,7 +19,7 @@ class AlertaB3(Base):
     email = Column(String, index=True)
     ativo = Column(String)
     preco_alvo = Column(Float)
-    condicao = Column(String)  # "maior" ou "menor"
+    condicao = Column(String)
     ativo_monitorando = Column(Boolean, default=True)
 
 Base.metadata.create_all(bind=engine)
@@ -43,11 +42,33 @@ def get_db():
     finally:
         db.close()
 
-# CONFIGURAÇÃO DE E-MAIL
-EMAIL_REMETENTE = "rtlima.ia@gmail.com"  # Coloque seu Gmail aqui
-SENHA_REMETENTE = "pluntrmxwvmnodqb"  # Coloque sua senha de app de 16 letras aqui
+# CONFIGURAÇÃO DO BREVO (Nova forma estável para nuvem)
+BREVO_API_KEY = "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" # Cole aqui a chave gigante que você gerou no Brevo
+EMAIL_REMETENTE = "rtlima.ia@gmail.com" # Seu e-mail cadastrado lá
 
-# E-mail de Confirmação de Cadastro (Ajuste 4: Incluindo Cotação Atual)
+def enviar_email_via_web(destino, assunto, corpo_texto):
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+    payload = {
+        "sender": {"name": "Radar B3", "email": EMAIL_REMETENTE},
+        "to": [{"email": destino}],
+        "subject": assunto,
+        "textContent": corpo_texto
+    }
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code in [200, 201, 202]:
+            print(f"E-mail enviado com sucesso via Web para {destino}!")
+        else:
+            print(f"Erro no Brevo: {response.text}")
+    except Exception as e:
+        print(f"Erro ao conectar com a API de e-mail: {e}")
+
+# E-mail de Confirmação de Cadastro
 def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
     texto_condicao = "MAIOR ou igual a" if condicao == "maior" else "MENOR ou igual a"
     corpo = (
@@ -58,17 +79,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
         f"O Radar B3 enviará uma mensagem assim que este objetivo for atingido!"
     )
-    msg = MIMEText(corpo)
-    msg['Subject'] = f"📡 Radar B3: Monitoramento de {ativo} Ativado!"
-    msg['From'] = EMAIL_REMETENTE
-    msg['To'] = destino
-
-    try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 587) as server:
-            server.login(EMAIL_REMETENTE, SENHA_REMETENTE)
-            server.send_message(msg)
-    except Exception as e:
-        print(f"Erro ao enviar e-mail: {e}")
+    enviar_email_via_web(destino, f"📡 Radar B3: Monitoramento de {ativo} Ativado!", corpo)
 
 # E-mail de Objetivo Atingido
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
@@ -81,17 +92,7 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
         f"Preço Atual de Mercado: R$ {preco_atual:.2f}\n\n"
         f"Este monitoramento foi encerrado."
     )
-    msg = MIMEText(corpo)
-    msg['Subject'] = f"🔔 Radar B3: {ativo} atingiu R$ {preco_atual:.2f}!"
-    msg['From'] = EMAIL_REMETENTE
-    msg['To'] = destino
-
-    try:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 587) as server:
-            server.login(EMAIL_REMETENTE, SENHA_REMETENTE)
-            server.send_message(msg)
-    except Exception as e:
-        print(f"Erro ao enviar e-mail: {e}")
+    enviar_email_via_web(destino, f"🔔 Radar B3: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
 
 # 3. O Robô Supervisor
 async def monitor_mercado_b3():
@@ -154,24 +155,16 @@ def criar_alerta(
     db: Session = Depends(get_db)
 ):
     ticker_b3 = ativo.upper().strip()
-    
-    # Busca o preço atual apenas para anexar no e-mail de confirmação
     try:
         t = yf.Ticker(f"{ticker_b3}.SA")
         preco_atual = round(t.fast_info['last_price'], 2)
     except Exception:
         preco_atual = 0.0
 
-    novo_alerta = AlertaB3(
-        email=email, 
-        ativo=ticker_b3, 
-        preco_alvo=preco_alvo, 
-        condicao=condicao
-    )
+    novo_alerta = AlertaB3(email=email, ativo=ticker_b3, preco_alvo=preco_alvo, condicao=condicao)
     db.add(novo_alerta)
     db.commit()
     
-    # Envia e-mail contendo a cotação atual
     enviar_email_confirmacao(email, ticker_b3, preco_atual, preco_alvo, condicao)
     
     return {
