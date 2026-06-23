@@ -455,9 +455,9 @@ def pagina_inicial():
 
 @app.get("/api/preco/{ativo}")
 @app.get("/api/preco")
-def obtener_preco_ativo(ativo: str = None):
+def obter_preco_ativo(ativo: str = None):
     if not ativo:
-        return JSONResponse(status="erro", mensagem="O código do ativo é obrigatório."), 400
+        return {"status": "erro", "mensagem": "O código do ativo é obrigatório."}
 
     ticker = ativo.strip().upper()
     if not ticker.endswith(".SA"):
@@ -468,16 +468,19 @@ def obtener_preco_ativo(ativo: str = None):
     nome_ativo = ticker.replace(".SA", "")
     tempo_atual = time.time()
 
+    # 1. Checagem de Cache (Garante o retorno idêntico ao esperado)
     if nome_ativo in CACHE_COTCOES:
         dados_cache = CACHE_COTCOES[nome_ativo]
         if tempo_atual - dados_cache["timestamp"] < CACHE_EXPIRACAO_SEGUNDOS:
+            print(f"⚡ [CACHE] Preço de {nome_ativo} retornado da memória: R$ {dados_cache['preco']}")
             return {
                 "status": "sucesso", 
                 "ativo": nome_ativo, 
-                "preco_atual": dados_cache["preco"],
-                "preco": dados_cache["preco"]
+                "preco_atual": float(dados_cache["preco"]),
+                "preco": float(dados_cache["preco"])
             }
 
+    # 2. Consulta via HTTP direto na API leve do Yahoo
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
         headers = {
@@ -487,29 +490,45 @@ def obtener_preco_ativo(ativo: str = None):
         
         preco_atual = None
         if resposta.status_code == 200:
-            dados = resposta.json()
+            dados = response_json = resposta.json()
             meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
             preco_atual = meta.get("regularMarketPrice")
 
+        # Fallback para yfinance tradicional caso a requisição leve falhe
         if preco_atual is None:
             dados_acao = yf.Ticker(ticker_yahoo)
             preco_atual = dados_acao.history(period="1d")["Close"].iloc[-1]
             
         preco_final = round(float(preco_atual), 2)
+
+        # Salva no cache da memória
         CACHE_COTCOES[nome_ativo] = {"preco": preco_final, "timestamp": tempo_atual}
+        print(f"🌍 [API YAHOO] Cotação de {nome_ativo} atualizada: R$ {preco_final}")
         
+        # 🔥 RETORNO COMPLETO: Garante tanto o 'status' quanto o 'preco_atual' para o JavaScript
         return {
             "status": "sucesso",
             "ativo": nome_ativo,
             "preco_atual": preco_final,
-            "preco": preco_final
+            "preco": preco_final,
+            "price": preco_final,
+            "valor": preco_final
         }
         
     except Exception as e:
         print(f"💥 Erro na API de cotação para {ativo}: {e}")
+        
+        # Fallback de emergência caso tudo falhe e exista histórico no cache
         if nome_ativo in CACHE_COTCOES:
-            return {"status": "sucesso", "ativo": nome_ativo, "preco_atual": CACHE_COTCOES[nome_ativo]["preco"]}
-        return {"status": "erro", "mensagem": "Cotação indisponível."}
+            preco_antigo = CACHE_COTCOES[nome_ativo]["preco"]
+            return {
+                "status": "sucesso",
+                "ativo": nome_ativo,
+                "preco_atual": preco_antigo,
+                "preco": preco_antigo
+            }
+            
+        return {"status": "erro", "mensagem": "Cotação indisponível no momento."}
 
 @app.post("/api/alerta")
 @app.post("/api/alerta/")
