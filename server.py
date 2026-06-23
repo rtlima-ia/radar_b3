@@ -117,54 +117,173 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
 def pagina_inicial():
     # 💡 SEU DESIGN COMPLETO: Cole todo o conteúdo do seu index.html antigo aqui dentro das três aspas!
     html_content = """
-    <!DOCTYPE html>
-    <html lang="pt-br">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Avisa Pra Mim - Radar B3</title>
-        <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; max-width: 500px; margin: 60px auto; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 8px; background: #ffffff; }
-            h2 { color: #007bff; text-align: center; margin-bottom: 25px; font-weight: 60px; }
-            .form-group { margin-bottom: 20px; }
-            label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #555; }
-            input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; transition: border-color 0.2s; }
-            input:focus, select:focus { border-color: #007bff; outline: none; }
-            button { background-color: #007bff; color: white; border: none; padding: 14px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; margin-top: 10px; transition: background-color 0.2s; }
-            button:hover { background-color: #0056b3; }
-        </style>
-    </head>
-    <body>
-        <h2>📡 Avisa Pra Mim — Radar B3</h2>
-        
-        <form action="/configurar-alerta" method="post">
-            <div class="form-group">
-                <label for="email">Seu E-mail:</label>
-                <input type="email" id="email" name="email" placeholder="exemplo@email.com" required>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar B3 - Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center font-sans p-4">
+
+    <div class="max-w-xl w-full bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-extrabold text-green-400">📡 Radar B3</h1>
+            <p class="text-slate-400 mt-2 text-sm">Automação inteligente e sugestão de operação em tempo real.</p>
+        </div>
+
+        <form id="formB3" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, VALE3)</label>
+                <div class="relative">
+                    <input type="text" id="ativo" placeholder="Digite e clique fora..." required
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500 uppercase">
+                    <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-bold text-slate-500 hidden"></span>
+                </div>
             </div>
-            
-            <div class="form-group">
-                <label for="ativo">Código da Ação ou FII:</label>
-                <input type="text" id="ativo" name="ativo" placeholder="Ex: PETR4, VALE3, HGLG11" required>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Seu E-mail para Alerta</label>
+                <input type="email" id="email" placeholder="seuemail@exemplo.com" required
+                    class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
             </div>
-            
-            <div class="form-group">
-                <label for="preco_alvo">Preço Alvo (R$):</label>
-                <input type="number" step="0.01" id="preco_alvo" name="preco_alvo" placeholder="0.00" required>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Preço Alvo Desejado (R$)</label>
+                    <input type="number" step="0.01" id="preco" placeholder="0.00" required
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Me avise quando for:</label>
+                    <select id="condicao" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
+                        <option value="maior">📈 Maior ou Igual</option>
+                        <option value="menor">📉 Menor ou Igual</option>
+                    </select>
+                </div>
             </div>
-            
-            <div class="form-group">
-                <label for="condicao">Me avise quando o preço for:</label>
-                <select id="condicao" name="condicao">
-                    <option value="maior">Maior ou igual que o Alvo (Venda)</option>
-                    <option value="menor">Menor ou igual que o Alvo (Compra)</option>
-                </select>
-            </div>
-            
-            <button type="submit">Ativar Monitoramento</button>
+
+            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                Ativar Radar B3 🚀
+            </button>
         </form>
-    </body>
-    </html>
+
+        <div id="feedback" class="mt-6 hidden p-5 rounded-xl border"></div>
+    </div>
+
+    <script>
+        const inputAtivo = document.getElementById('ativo');
+        const inputPreco = document.getElementById('preco');
+        const selectCondicao = document.getElementById('condicao');
+        const precoTempoReal = document.getElementById('precoTempoReal');
+        const feedback = document.getElementById('feedback');
+
+        let valorCotacaoAtual = 0; // Guarda o valor para comparar depois
+
+        // AJUSTE 1: Exibe o preço com a legenda "Cotação Atual:" ao perder o foco
+        inputAtivo.addEventListener('blur', async () => {
+            const ativoVal = inputAtivo.value.trim();
+            if (!ativoVal) return;
+
+            precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-blue-400 animate-pulse";
+            precoTempoReal.innerText = "Buscando...";
+            precoTempoReal.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`https://radar-b3.onrender.com/api/preco/${ativoVal}`);
+                const dados = await response.json();
+
+                if (dados.status === "sucesso") {
+                    valorCotacaoAtual = dados.preco_atual;
+                    precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-green-400";
+                    precoTempoReal.innerText = `Cotação Atual: R$ ${valorCotacaoAtual.toFixed(2)}`;
+                } else {
+                    precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-red-500";
+                    precoTempoReal.innerText = "Não encontrado";
+                    valorCotacaoAtual = 0;
+                }
+            } catch (err) {
+                precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-red-500";
+                precoTempoReal.innerText = "Erro de conexão";
+                valorCotacaoAtual = 0;
+            }
+        });
+
+        // AJUSTE 2: Sugere automaticamente a condição conforme o usuário digita o preço
+        inputPreco.addEventListener('input', () => {
+            if (valorCotacaoAtual === 0) return; // Se não buscou o ativo ainda, não faz nada
+            
+            const valorDigitado = parseFloat(inputPreco.value);
+            if (isNaN(valorDigitado)) return;
+
+            if (valorDigitado > valorCotacaoAtual) {
+                selectCondicao.value = "maior"; // Se o alvo for maior que a cotação -> Maior ou Igual
+            } else {
+                selectCondicao.value = "menor"; // Se o alvo for menor que a cotação -> Menor ou Igual
+            }
+        });
+
+        // AJUSTE 3: Exibe os dados pré-cadastrados com sucesso e para qual e-mail foi enviado
+        document.getElementById('formB3').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const URL_API = 'https://radar-b3.onrender.com/api/alerta/';
+
+            feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
+            feedback.innerText = "Registrando o seu alerta de monitoramento...";
+            feedback.classList.remove('hidden');
+
+            try {
+                const response = await fetch(URL_API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        'email': document.getElementById('email').value,
+                        'ativo': inputAtivo.value,
+                        'preco_alvo': inputPreco.value,
+                        'condicao': selectCondicao.value
+                    })
+                });
+
+                const dados = await response.json();
+
+                if (dados.status === "sucesso") {
+                    const textoRegra = dados.condicao === "maior" ? "📈 MAIOR OU IGUAL" : "📉 MENOR OU IGUAL";
+                    const corRegra = dados.condicao === "maior" ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-green-500/20 text-green-400 border-green-500/30";
+
+                    feedback.className = "mt-6 p-5 rounded-xl border bg-slate-950 border-slate-800 text-left space-y-3 shadow-inner border-green-900/50";
+                    
+                    // Estrutura visual do Ajuste 3
+                    feedback.innerHTML = `
+                        <div class="border-b border-slate-800 pb-2">
+                            <span class="text-base font-bold text-green-400 block">🎉 PRÉ-CADASTRO REALIZADO COM SUCESSO!</span>
+                            <span class="text-xs text-slate-400">O robô já iniciou o monitoramento de mercado.</span>
+                        </div>
+                        <div class="space-y-1 text-sm mt-2">
+                            <p class="text-white">• <b>Ativo cadastrado:</b> ${dados.ativo}</p>
+                            <p class="text-white">• <b>Cotação de referência:</b> R$ ${dados.preco_atual.toFixed(2)}</p>
+                            <p class="text-white">• <b>Seu Preço Alvo:</b> R$ ${dados.preco_alvo.toFixed(2)}</p>
+                            <p class="text-white">• <b>Condição de disparo:</b> <span class="text-xs px-2 py-0.5 rounded font-bold ${corRegra}">${textoRegra}</span></p>
+                        </div>
+                        <div class="pt-3 border-t border-slate-800 text-xs text-emerald-400 font-medium flex items-center gap-1">
+                            📧 Um e-mail de confirmação foi enviado para: <span class="text-white underline">${dados.email}</span>
+                        </div>
+                    `;
+                    document.getElementById('formB3').reset();
+                    precoTempoReal.classList.add('hidden');
+                    valorCotacaoAtual = 0;
+                } else {
+                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                    feedback.innerText = dados.mensagem;
+                }
+            } catch (err) {
+                feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                feedback.innerText = "Erro ao conectar com o servidor.";
+            }
+        });
+    </script>
+</body>
+</html>
     """
     return HTMLResponse(content=html_content)
 
