@@ -30,6 +30,7 @@ EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alertab3@avisapramim.com.br")
 
 app = FastAPI(title="Alerta B3 - Radar B3")
 
+# Habilitar CORS para evitar bloqueios de requisições vindas do navegador
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,6 +39,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Cache Global na memória do servidor para evitar erro "Too Many Requests" do Yahoo
 CACHE_COTCOES = {}
 CACHE_EXPIRACAO_SEGUNDOS = 60  
 
@@ -178,7 +180,7 @@ def pagina_inicial():
 
             <form id="formB3" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, VALE3)</label>
                     <div class="relative">
                         <input type="text" id="ativo" placeholder="Digite e clique fora..." required
                             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500 uppercase">
@@ -257,7 +259,7 @@ def pagina_inicial():
             let valorCotacaoAtual = 0;
             let precoLimpoParaEnvio = 0;
 
-            // GERENCIAMENTO DAS ABAS (TABS)
+            // GERENCIAMENTO DAS ABAS
             tabCadastro.addEventListener('click', () => {
                 tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-green-400 border-b-2 border-green-400 focus:outline-none";
                 tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300";
@@ -287,7 +289,7 @@ def pagina_inicial():
                 executarSugestaoCondicao();
             });
 
-            function ejecutarSugestaoCondicao() {
+            function executarSugestaoCondicao() {
                 if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
                 if (precoLimpoParaEnvio > valorCotacaoAtual) {
                     selectCondicao.value = "maior";
@@ -468,7 +470,7 @@ def obter_preco_ativo(ativo: str = None):
     nome_ativo = ticker.replace(".SA", "")
     tempo_atual = time.time()
 
-    # 1. Checagem de Cache (Garante o retorno idêntico ao esperado)
+    # 1. Checagem de Cache (Retorno rápido da memória)
     if nome_ativo in CACHE_COTCOES:
         dados_cache = CACHE_COTCOES[nome_ativo]
         if tempo_atual - dados_cache["timestamp"] < CACHE_EXPIRACAO_SEGUNDOS:
@@ -490,7 +492,7 @@ def obter_preco_ativo(ativo: str = None):
         
         preco_atual = None
         if resposta.status_code == 200:
-            dados = response_json = resposta.json()
+            dados = resposta.json()  # <--- CORRIGIDO: Linha limpa sem variáveis fantasmas!
             meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
             preco_atual = meta.get("regularMarketPrice")
 
@@ -505,7 +507,6 @@ def obter_preco_ativo(ativo: str = None):
         CACHE_COTCOES[nome_ativo] = {"preco": preco_final, "timestamp": tempo_atual}
         print(f"🌍 [API YAHOO] Cotação de {nome_ativo} atualizada: R$ {preco_final}")
         
-        # 🔥 RETORNO COMPLETO: Garante tanto o 'status' quanto o 'preco_atual' para o JavaScript
         return {
             "status": "sucesso",
             "ativo": nome_ativo,
@@ -582,34 +583,24 @@ def configurar_alerta(
 
     return {"status": "sucesso", "ativo": ticker, "preco_atual": float(preco_atual), "preco_alvo": float(preco_alvo), "condicao": condicao, "email": novo_alerta.email}
 
-
 # ROTA: SOLICITAR CÓDIGO DE CANCELAMENTO
 @app.post("/api/cancelar/solicitar")
 def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
-    
-    # Busca se o usuário tem monitoramentos ativos
     alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
     
     if not alertas_ativos:
         return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
         
-    # Gera um código aleatório de 6 dígitos
     codigo_seguranca = str(random.randint(100000, 999999))
-    
-    # Remove códigos antigos deste e-mail para não acumular lixo
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
     
-    # Salva o novo código no banco
     novo_codigo = CodigoCancelamento(email=email_limpo, codigo=codigo_seguranca)
     db.add(novo_codigo)
     db.commit()
     
-    # Envia o e-mail com a lista de ativos e o token gerado
     enviar_email_solicitacao_cancelamento(email_limpo, alertas_ativos, codigo_seguranca)
-    
-    return {"status": "sucesso", "mensagem": "Código enviado! Verifique sua caixa de entrada ou spam."}
-
+    return {"status": "sucesso", "mensagem": "Código enviado! Verifique a sua caixa de entrada ou spam."}
 
 # ROTA: CONFIRMAR CÓDIGO E ENCERRAR RADAR
 @app.post("/api/cancelar/confirmar")
@@ -617,24 +608,18 @@ def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), db: 
     email_limpo = email.strip().lower()
     codigo_limpo = codigo.strip()
     
-    # Procura pelo token correspondente no banco
     registro_codigo = db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo, CodigoCancelamento.codigo == codigo_limpo).first()
-    
     if not registro_codigo:
         return {"status": "erro", "mensagem": "Código de segurança incorreto ou e-mail inválido."}
         
-    # Desativa todos os alertas ativos deste e-mail (muda ativo_sistema para False)
     alertas_desativados = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).update({"ativo_sistema": False})
-    
-    # Deleta o token usado
     db.delete(registro_codigo)
     db.commit()
     
     return {"status": "sucesso", "mensagem": f"Todos os seus monitoramentos ativos ({alertas_desativados}) foram encerrados com sucesso!"}
 
-
 # ==========================================
-# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO
+# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO (BLINDADO)
 # ==========================================
 
 def loop_monitoramento_b3():
@@ -653,7 +638,9 @@ def loop_monitoramento_b3():
                     try:
                         ticker_sa = f"{ativo}.SA"
                         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_sa}"
-                        headers = {"User-Agent": "Mozilla/5.0"}
+                        headers = {
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        }
                         resposta = requests.get(url, headers=headers, timeout=10)
                         preco = None
                         if resposta.status_code == 200:
