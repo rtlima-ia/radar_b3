@@ -115,9 +115,10 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
 
 @app.get("/", response_class=HTMLResponse)
 def pagina_inicial():
-    # 💡 SEU DESIGN COMPLETO: Cole todo o conteúdo do seu index.html antigo aqui dentro das três aspas!
+    # 💡 Cole o conteúdo completo do seu 'index.html' original dentro das três aspas abaixo 
+    # para que a sua interface fique 100% idêntica ao design que você criou!
     html_content = """
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -287,6 +288,38 @@ def pagina_inicial():
     """
     return HTMLResponse(content=html_content)
 
+@app.get("/api/preco/{ativo}")
+def obter_preco_ativo(ativo: str):
+    """
+    Rota que atende à busca em tempo real feita pelo Javascript do seu index.html!
+    """
+    ticker = ativo.strip().upper()
+    if not ticker.endswith(".SA"):
+        ticker_yahoo = f"{ticker}.SA"
+    else:
+        ticker_yahoo = ticker
+
+    try:
+        dados_acao = yf.Ticker(ticker_yahoo)
+        
+        # 1ª tentativa: Tempo real via Info
+        preco_atual = dados_acao.info.get("regularMarketPrice")
+        
+        # 2ª tentativa: Histórico diário recente (caso pregão fechado)
+        if not preco_atual:
+            historico = dados_acao.history(period="1d")
+            if not historico.empty:
+                preco_atual = historico["Close"].iloc[-1]
+            else:
+                # 3ª tentativa: Margem de segurança de 5 dias
+                preco_atual = dados_acao.history(period="5d")["Close"].iloc[-1]
+                
+        return {"ativo": ticker.replace(".SA", ""), "preco": round(preco_atual, 2)}
+        
+    except Exception as e:
+        print(f"Erro na rota API de cotação para {ativo}: {e}")
+        raise HTTPException(status_code=404, detail="Ativo não encontrado ou erro na busca")
+
 @app.post("/configurar-alerta")
 def configurar_alerta(
     email: str = Form(...),
@@ -302,24 +335,19 @@ def configurar_alerta(
         ticker_yahoo = ticker
         ticker = ticker.replace(".SA", "")
 
-    # Busca o preço atual com tratamento de erro robusto
     try:
         dados_acao = yf.Ticker(ticker_yahoo)
-        # Tenta primeiro pelo método Info (Tempo Real)
         preco_atual = dados_acao.info.get("regularMarketPrice")
-        
-        # Se o Info falhar ou vier vazio, tenta pelo histórico do dia
         if not preco_atual:
             historico = dados_acao.history(period="1d")
             if not historico.empty:
                 preco_atual = historico["Close"].iloc[-1]
             else:
-                # Última tentativa: busca os últimos 5 dias caso o mercado esteja fechado há muito tempo
                 preco_atual = dados_acao.history(period="5d")["Close"].iloc[-1]
                 
     except Exception as e:
         print(f"Erro ao buscar cotação de {ticker}: {e}")
-        raise HTTPException(status_code=400, detail=f"Não foi possível encontrar a cotação para o ativo {ticker}. Verifique se o código está correto.")
+        raise HTTPException(status_code=400, detail=f"Não foi possível encontrar a cotação para o ativo {ticker}.")
 
     novo_alerta = Alerta(
         email=email.strip().lower(),
@@ -335,9 +363,8 @@ def configurar_alerta(
 
     return RedirectResponse(url="/", status_code=303)
 
-
 # ==========================================
-# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO (CORRIGIDO)
+# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO
 # ==========================================
 
 def loop_monitoramento_b3():
@@ -358,7 +385,6 @@ def loop_monitoramento_b3():
                         ticker_sa = f"{ativo}.SA"
                         dados = yf.Ticker(ticker_sa)
                         
-                        # Mesma lógica segura de captura de preço para o robô
                         preco = dados.info.get("regularMarketPrice")
                         if not preco:
                             hist = dados.history(period="1d")
@@ -392,6 +418,6 @@ def loop_monitoramento_b3():
             db.close()
 
         time.sleep(300)
-        
+
 thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
 thread_robo.start()
