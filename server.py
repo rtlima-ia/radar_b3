@@ -384,18 +384,51 @@ def configurar_alerta(
         ticker_yahoo = ticker
         ticker = ticker.replace(".SA", "")
 
-    # Busca a cotação atual de referência para o e-mail e para o feedback da tela
-    try:
-        dados_acao = yf.Ticker(ticker_yahoo)
-        preco_atual = dados_acao.info.get("regularMarketPrice")
-        if not preco_atual:
-            historico = dados_acao.history(period="1d")
-            preco_atual = historico["Close"].iloc[-1] if not historico.empty else dados_acao.history(period="5d")["Close"].iloc[-1]
-    except Exception as e:
-        print(f"Erro ao buscar cotação no cadastro: {e}")
-        return {"status": "erro", "mensagem": f"Não foi possível validar o ativo {ticker}."}
+    # 🛡️ BUSCA BLINDADA POR CACHE (Igual à rota GET que funcionou)
+    tempo_atual = time.time()
+    preco_atual = None
 
-    # Salva o alerta no banco de dados
+    # 1. Tenta reaproveitar o preço recente que já está no Cache interno
+    if ticker in CACHE_COTCOES:
+        dados_cache = CACHE_COTCOES[ticker]
+        if tempo_atual - dados_cache["timestamp"] < CACHE_EXPIRACAO_SEGUNDOS:
+            preco_atual = dados_cache["preco"]
+            print(f"⚡ [CADASTRO] Usando preço em cache para {ticker}: R$ {preco_atual}")
+
+    # 2. Se não estiver no cache, faz a busca HTTP leve para evitar o Bloqueio do Yahoo
+    if preco_atual is None:
+        try:
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+            resposta = requests.get(url, headers=headers, timeout=10)
+            
+            if resposta.status_code == 200:
+                dados = resposta.json()
+                meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
+                preco_atual = meta.get("regularMarketPrice")
+
+            # Fallback de emergência via yfinance tradicional
+            if preco_atual is None:
+                dados_acao = yf.Ticker(ticker_yahoo)
+                preco_atual = dados_acao.history(period="1d")["Close"].iloc[-1]
+                
+            preco_atual = round(float(preco_atual), 2)
+            # Atualiza o cache
+            CACHE_COTCOES[ticker] = {"preco": preco_atual, "timestamp": tempo_atual}
+            print(f"🌍 [CADASTRO] Preço atualizado via HTTP direto para {ticker}: R$ {preco_atual}")
+
+        except Exception as e:
+            print(f"⚠️ Erro ao buscar cotação no cadastro de {ticker}: {e}")
+            # Se tudo falhar e o Yahoo bloquear, mas tivermos QUALQUER preço antigo no cache, usamos ele
+            if ticker in CACHE_COTCOES:
+                preco_atual = CACHE_COTCOES[ticker]["preco"]
+                print(f"🛟 [CADASTRO-EMERGÊNCIA] Usando último preço histórico do cache para {ticker}: R$ {preco_atual}")
+            else:
+                return {"status": "erro", "mensagem": f"Não foi possível validar o ativo {ticker} devido ao limite de requisições do Yahoo. Tente novamente em instantes."}
+
+    # Salva o alerta no banco de dados com segurança
     novo_alerta = Alerta(
         email=email.strip().lower(),
         ativo=ticker,
@@ -406,10 +439,10 @@ def configurar_alerta(
     db.add(novo_alerta)
     db.commit()
 
-    # Dispara e-mail profissional via Resend
+    # Dispara e-mail profissional via Resend usando o domínio avisapramim.com.br
     enviar_email_confirmacao(novo_alerta.email, novo_alerta.ativo, preco_atual, preco_alvo, condicao)
 
-    # Devolve a resposta exata em JSON que o AJAX do seu card espera para preencher o HTML de sucesso
+    # Retorna o JSON de sucesso para o Front-end preencher o card verde na tela
     return {
         "status": "sucesso",
         "ativo": ticker,
@@ -418,7 +451,7 @@ def configurar_alerta(
         "condicao": condicao,
         "email": novo_alerta.email
     }
-
+    \
 # ==========================================
 # 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO
 # ==========================================
