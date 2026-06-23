@@ -176,7 +176,7 @@ def pagina_inicial():
                     <div class="relative">
                         <input type="text" id="ativo" placeholder="Digite e clique fora..." required
                             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500 uppercase">
-                        <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-bold text-slate-500 hidden"></span>
+                        <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-bold text-green-400 hidden"></span>
                     </div>
                 </div>
 
@@ -247,6 +247,7 @@ def pagina_inicial():
             const tabCancelamento = document.getElementById('tabCancelamento');
             const formB3 = document.getElementById('formB3');
             const containerCancelamento = document.getElementById('containerCancelamento');
+            const formSolicitarCancelamento = document.getElementById('formSolicitarCancelamento');
 
             const inputAtivo = document.getElementById('ativo');
             const inputPreco = document.getElementById('preco');
@@ -257,10 +258,11 @@ def pagina_inicial():
             let valorCotacaoAtual = 0;
             let precoLimpoParaEnvio = 0;
 
-            // GERENCIAMENTO DAS ABAS
+            // FIX CORRIGIDO: GERENCIAMENTO DE ABAS SEGURO
             tabCadastro.addEventListener('click', () => {
                 tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-green-400 border-b-2 border-green-400 focus:outline-none";
                 tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300";
+                
                 formB3.classList.remove('hidden');
                 containerCancelamento.classList.add('hidden');
                 feedback.classList.add('hidden');
@@ -269,8 +271,10 @@ def pagina_inicial():
             tabCancelamento.addEventListener('click', () => {
                 tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-blue-400 border-b-2 border-blue-400 focus:outline-none";
                 tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300";
+                
                 formB3.classList.add('hidden');
-                containerCancelamento.classList.remove('hidden');
+                containerCancelamento.classList.remove('hidden'); // Mostra o container pai
+                formSolicitarCancelamento.classList.remove('hidden'); // Garante que o campo de e-mail apareça
                 feedback.classList.add('hidden');
             });
 
@@ -385,7 +389,7 @@ def pagina_inicial():
             });
 
             // SUBMIT: SOLICITAR CÓDIGO
-            document.getElementById('formSolicitarCancelamento').addEventListener('submit', async (e) => {
+            formSolicitarCancelamento.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const emailVal = document.getElementById('emailCancelamento').value;
 
@@ -415,7 +419,7 @@ def pagina_inicial():
                 }
             });
 
-            // SUBMIT: RECUPERAR E LISTAR ITENS (NOVO)
+            // SUBMIT: RECUPERAR E LISTAR ITENS
             document.getElementById('formAutenticarConsulta').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const emailVal = document.getElementById('emailCancelamento').value;
@@ -423,6 +427,7 @@ def pagina_inicial():
 
                 feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
                 feedback.innerText = "Autenticando e extraindo monitoramentos...";
+                feedback.classList.remove('hidden');
 
                 try {
                     const response = await fetch('/api/cancelar/listar', {
@@ -433,9 +438,9 @@ def pagina_inicial():
                     const dados = await response.json();
 
                     if (dados.status === "sucesso") {
-                        feedback.classList.add('hidden'); // Oculta o carregando
+                        feedback.classList.add('hidden');
                         const listaDiv = document.getElementById('listaAlertasDinamica');
-                        listaDiv.innerHTML = ""; // Limpa itens anteriores
+                        listaDiv.innerHTML = "";
 
                         dados.alertas.forEach(alerta => {
                             const regraTexto = alerta.condicao === "maior" ? "📈 >= R$" : "📉 <= R$";
@@ -465,7 +470,7 @@ def pagina_inicial():
                 }
             });
 
-            // SUBMIT: CONFIRMAR EXCLUSÃO SELECIONADA (NOVO)
+            // SUBMIT: CONFIRMAR EXCLUSÃO SELECIONADA
             document.getElementById('btnConfirmarCancelamentoLote').addEventListener('click', async () => {
                 const checkboxes = document.querySelectorAll('.checkbox-alerta-cancelar:checked');
                 const idsParaCancelar = Array.from(checkboxes).map(cb => cb.value);
@@ -489,7 +494,7 @@ def pagina_inicial():
                         body: new URLSearchParams({
                             'email': emailVal,
                             'codigo': codigoVal,
-                            'ids': idsParaCancelar.join(',') # Envia os IDs separados por vírgula
+                            'ids': idsParaCancelar.join(',')
                         })
                     });
                     const dados = await response.json();
@@ -498,7 +503,6 @@ def pagina_inicial():
                         feedback.className = "mt-6 p-5 rounded-xl border bg-red-950 text-red-400 border-red-900/50 text-center text-sm font-bold shadow-inner";
                         feedback.innerText = `🔒 ${dados.mensagem}`;
                         
-                        // Reseta a interface de consulta
                         document.getElementById('formSolicitarCancelamento').reset();
                         document.getElementById('formAutenticarConsulta').reset();
                         document.getElementById('formAutenticarConsulta').classList.add('hidden');
@@ -646,50 +650,42 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     enviar_email_token_consulta(email_limpo, codigo_seguranca)
     return {"status": "sucesso", "mensagem": "Código de consulta enviado com sucesso para a sua caixa de entrada!"}
 
-# ROTA NOVA: AUTENTICAR E RETORNAR LISTA DE MONITORAMENTOS
+# ROTA: AUTENTICAR E RETORNAR LISTA DE MONITORAMENTOS
 @app.post("/api/cancelar/listar")
 def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
     codigo_limpo = codigo.strip()
     
-    # Valida o token temporário
     registro_codigo = db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo, CodigoCancelamento.codigo == codigo_limpo).first()
     if not registro_codigo:
         raise HTTPException(status_code=403, detail="Código inválido ou e-mail incorreto.")
         
-    # Extrai todos os robôs operantes daquele usuário
     alertas = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
-    
-    # Monta uma lista estruturada em JSON
     lista_alertas = [{"id": a.id, "ativo": a.ativo, "preco_alvo": a.preco_alvo, "condicao": a.condicao} for a in alertas]
     
     return {"status": "sucesso", "alertas": lista_alertas}
 
-# ROTA ATUALIZADA: CONFIRMAR CANCELAMENTO CIRÚRGICO (POR IDS SELECIONADOS)
+# ROTA: CONFIRMAR CANCELAMENTO CIRÚRGICO
 @app.post("/api/cancelar/confirmar")
 def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
     codigo_limpo = codigo.strip()
     
-    # Valida o token
     registro_codigo = db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo, CodigoCancelamento.codigo == codigo_limpo).first()
     if not registro_codigo:
         return {"status": "erro", "mensagem": "Token de segurança inválido."}
         
-    # Transforma a string de IDs ("1,4,7") em uma lista de inteiros Python ([1, 4, 7])
     lista_ids = [int(x) for x in ids.split(",") if x.strip().isdigit()]
     
     if not lista_ids:
         return {"status": "erro", "mensagem": "Nenhum monitoramento válido foi selecionado."}
         
-    # Desativa EXCLUSIVAMENTE os IDs que o usuário marcou e que pertencem ao e-mail dele
     alertas_desativados = db.query(Alerta).filter(
         Alerta.id.in_(lista_ids),
         Alerta.email == email_limpo,
         Alerta.ativo_sistema == True
     ).update({"ativo_sistema": False}, synchronize_session=False)
     
-    # Apaga o token do banco
     db.delete(registro_codigo)
     db.commit()
     
