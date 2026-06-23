@@ -27,8 +27,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-# 🟢 CORRIGIDO: Remetente oficial alterado para o novo domínio
-EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alerta@b3alerta.com.br")
+# Força o uso do domínio novo independente das variáveis antigas do Render
+EMAIL_REMETENTE = "alerta@b3alerta.com.br"
 
 # 🟢 CORRIGIDO: Título oficial do app alterado para a nova marca
 app = FastAPI(title="B3 Alerta - Radar B3")
