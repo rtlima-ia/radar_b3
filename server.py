@@ -29,7 +29,6 @@ EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alertab3@avisapramim.com.br")
 
 app = FastAPI(title="Alerta B3 - Radar B3")
 
-# Habilitar CORS para evitar bloqueios de requisições vindas do navegador
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,7 +37,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Cache Global na memória do servidor para evitar erro "Too Many Requests" do Yahoo
 CACHE_COTCOES = {}
 CACHE_EXPIRACAO_SEGUNDOS = 60  
 
@@ -105,7 +103,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
         f"O Alerta B3 enviará uma mensagem assim que este objetivo for atingido!"
     )
-    enviar_email_via_resend(destino, f"📡 Monitoramento de {ativo} Ativado!", corpo)
+    enviar_email_via_resend(destino, f"📡 Monitoramento {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == "maior" else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
@@ -160,8 +158,9 @@ def pagina_inicial():
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Preço Alvo Desejado (R$)</label>
-                        <input type="number" step="0.01" id="preco" placeholder="0.00" required
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
+                        <!-- Mudado para text para aplicar a máscara visual de dinheiro -->
+                        <input type="text" id="preco" placeholder="R$ 0,00" required
                             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
                     </div>
                     <div>
@@ -189,6 +188,40 @@ def pagina_inicial():
             const feedback = document.getElementById('feedback');
 
             let valorCotacaoAtual = 0;
+            let precoLimpoParaEnvio = 0; // Armazena o float puro (ex: 24.50)
+
+            // MÁSCARA EM TEMPO REAL: Transforma digitação pura em formato R$ 0,00
+            inputPreco.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, ""); // Remove tudo que não for número
+                
+                if (value === "") {
+                    precoLimpoParaEnvio = 0;
+                    e.target.value = "";
+                    return;
+                }
+
+                // Converte a string numérica em float dividindo por 100 (casas centesimais)
+                precoLimpoParaEnvio = parseFloat(value) / 100;
+                
+                // Formata visualmente no padrão brasileiro
+                e.target.value = precoLimpoParaEnvio.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+
+                // Executa a lógica de sugestão automática baseada no preço digitado
+                executarSugestaoCondicao();
+            });
+
+            function executarSugestaoCondicao() {
+                if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
+                
+                if (precoLimpoParaEnvio > valorCotacaoAtual) {
+                    selectCondicao.value = "maior";
+                } else {
+                    selectCondicao.value = "menor";
+                }
+            }
 
             inputAtivo.addEventListener('blur', async () => {
                 const ativoVal = inputAtivo.value.trim();
@@ -199,7 +232,6 @@ def pagina_inicial():
                 precoTempoReal.classList.remove('hidden');
 
                 try {
-                    // Busca na API própria usando URL relativa para evitar problemas de protocolo
                     const response = await fetch(`/api/preco/${ativoVal}`);
                     const dados = await response.json();
 
@@ -207,6 +239,7 @@ def pagina_inicial():
                         valorCotacaoAtual = dados.preco_atual;
                         precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-green-400";
                         precoTempoReal.innerText = `Cotação Atual: R$ ${valorCotacaoAtual.toFixed(2)}`;
+                        executarSugestaoCondicao(); // Reavalia caso o preço já estivesse preenchido
                     } else {
                         precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-red-500";
                         precoTempoReal.innerText = "Não encontrado";
@@ -219,22 +252,14 @@ def pagina_inicial():
                 }
             });
 
-            inputPreco.addEventListener('input', () => {
-                if (valorCotacaoAtual === 0) return;
-                const valorDigitado = parseFloat(inputPreco.value);
-                if (isNaN(valorDigitado)) return;
-
-                if (valorDigitado > valorCotacaoAtual) {
-                    selectCondicao.value = "maior";
-                } else {
-                    selectCondicao.value = "menor";
-                }
-            });
-
             document.getElementById('formB3').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                // Envia direto para a rota unificada da API
                 const URL_API = '/api/alerta';
+
+                if (precoLimpoParaEnvio <= 0) {
+                    alert("Por favor, digite um preço alvo válido.");
+                    return;
+                }
 
                 feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
                 feedback.innerText = "Registrando o seu alerta de monitoramento...";
@@ -247,7 +272,7 @@ def pagina_inicial():
                         body: new URLSearchParams({
                             'email': document.getElementById('email').value,
                             'ativo': inputAtivo.value,
-                            'preco_alvo': inputPreco.value,
+                            'preco_alvo': precoLimpoParaEnvio, // Envia o número decimal limpo para o Python
                             'condicao': selectCondicao.value
                         })
                     });
@@ -278,6 +303,7 @@ def pagina_inicial():
                         document.getElementById('formB3').reset();
                         precoTempoReal.classList.add('hidden');
                         valorCotacaoAtual = 0;
+                        precoLimpoParaEnvio = 0;
                     } else {
                         feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
                         feedback.innerText = dados.mensagem;
@@ -308,7 +334,6 @@ def obter_preco_ativo(ativo: str = None):
     nome_ativo = ticker.replace(".SA", "")
     tempo_atual = time.time()
 
-    # 1. Checagem de Cache para evitar Rate Limits
     if nome_ativo in CACHE_COTCOES:
         dados_cache = CACHE_COTCOES[nome_ativo]
         if tempo_atual - dados_cache["timestamp"] < CACHE_EXPIRACAO_SEGUNDOS:
@@ -319,7 +344,6 @@ def obter_preco_ativo(ativo: str = None):
                 "preco": dados_cache["preco"]
             }
 
-    # 2. Consulta via HTTP direto na API leve do Yahoo
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
         headers = {
@@ -333,17 +357,13 @@ def obter_preco_ativo(ativo: str = None):
             meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
             preco_atual = meta.get("regularMarketPrice")
 
-        # Fallback para yfinance tradicional caso a requisição leve falhe
         if preco_atual is None:
             dados_acao = yf.Ticker(ticker_yahoo)
             preco_atual = dados_acao.history(period="1d")["Close"].iloc[-1]
             
         preco_final = round(float(preco_atual), 2)
-
-        # Salva no cache da memória
         CACHE_COTCOES[nome_ativo] = {"preco": preco_final, "timestamp": tempo_atual}
         
-        # Retorna o formato exato que o seu JavaScript precisa
         return {
             "status": "sucesso",
             "ativo": nome_ativo,
@@ -355,8 +375,6 @@ def obter_preco_ativo(ativo: str = None):
         
     except Exception as e:
         print(f"💥 Erro total na API de cotação para {ativo}: {e}")
-        
-        # Fallback de emergência caso tudo falhe e exista histórico no cache
         if nome_ativo in CACHE_COTCOES:
             preco_antigo = CACHE_COTCOES[nome_ativo]["preco"]
             return {
@@ -365,7 +383,6 @@ def obter_preco_ativo(ativo: str = None):
                 "preco_atual": preco_antigo,
                 "preco": preco_antigo
             }
-            
         return {"status": "erro", "mensagem": "Cotação indisponível no momento."}
 
 @app.post("/api/alerta")
@@ -384,18 +401,14 @@ def configurar_alerta(
         ticker_yahoo = ticker
         ticker = ticker.replace(".SA", "")
 
-    # 🛡️ BUSCA BLINDADA POR CACHE (Igual à rota GET que funcionou)
     tempo_atual = time.time()
     preco_atual = None
 
-    # 1. Tenta reaproveitar o preço recente que já está no Cache interno
     if ticker in CACHE_COTCOES:
         dados_cache = CACHE_COTCOES[ticker]
         if tempo_atual - dados_cache["timestamp"] < CACHE_EXPIRACAO_SEGUNDOS:
             preco_atual = dados_cache["preco"]
-            print(f"⚡ [CADASTRO] Usando preço em cache para {ticker}: R$ {preco_atual}")
 
-    # 2. Se não estiver no cache, faz a busca HTTP leve para evitar o Bloqueio do Yahoo
     if preco_atual is None:
         try:
             url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
@@ -409,26 +422,20 @@ def configurar_alerta(
                 meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
                 preco_atual = meta.get("regularMarketPrice")
 
-            # Fallback de emergência via yfinance tradicional
             if preco_atual is None:
                 dados_acao = yf.Ticker(ticker_yahoo)
                 preco_atual = dados_acao.history(period="1d")["Close"].iloc[-1]
                 
             preco_atual = round(float(preco_atual), 2)
-            # Atualiza o cache
             CACHE_COTCOES[ticker] = {"preco": preco_atual, "timestamp": tempo_atual}
-            print(f"🌍 [CADASTRO] Preço atualizado via HTTP direto para {ticker}: R$ {preco_atual}")
 
         except Exception as e:
             print(f"⚠️ Erro ao buscar cotação no cadastro de {ticker}: {e}")
-            # Se tudo falhar e o Yahoo bloquear, mas tivermos QUALQUER preço antigo no cache, usamos ele
             if ticker in CACHE_COTCOES:
                 preco_atual = CACHE_COTCOES[ticker]["preco"]
-                print(f"🛟 [CADASTRO-EMERGÊNCIA] Usando último preço histórico do cache para {ticker}: R$ {preco_atual}")
             else:
-                return {"status": "erro", "mensagem": f"Não foi possível validar o ativo {ticker} devido ao limite de requisições do Yahoo. Tente novamente em instantes."}
+                return {"status": "erro", "mensagem": f"Não foi possível validar o ativo {ticker}. Tente novamente."}
 
-    # Salva o alerta no banco de dados com segurança
     novo_alerta = Alerta(
         email=email.strip().lower(),
         ativo=ticker,
@@ -439,10 +446,8 @@ def configurar_alerta(
     db.add(novo_alerta)
     db.commit()
 
-    # Dispara e-mail profissional via Resend usando o domínio avisapramim.com.br
     enviar_email_confirmacao(novo_alerta.email, novo_alerta.ativo, preco_atual, preco_alvo, condicao)
 
-    # Retorna o JSON de sucesso para o Front-end preencher o card verde na tela
     return {
         "status": "sucesso",
         "ativo": ticker,
@@ -451,9 +456,9 @@ def configurar_alerta(
         "condicao": condicao,
         "email": novo_alerta.email
     }
-    \
+
 # ==========================================
-# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO
+# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO (BLINDADO)
 # ==========================================
 
 def loop_monitoramento_b3():
@@ -472,17 +477,40 @@ def loop_monitoramento_b3():
                 for ativo in ativos_unicos:
                     try:
                         ticker_sa = f"{ativo}.SA"
-                        dados = yf.Ticker(ticker_sa)
                         
-                        preco = dados.info.get("regularMarketPrice")
-                        if not preco:
-                            hist = dados.history(period="1d")
-                            preco = hist["Close"].iloc[-1] if not hist.empty else dados.history(period="5d")["Close"].iloc[-1]
+                        # 🛡️ CONSULTA LEVE E IDENTIFICADA VIA HTTP (Igual ao que funcionou nas APIs)
+                        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_sa}"
+                        headers = {
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        }
                         
-                        cotacoes[ativo] = preco
+                        resposta = requests.get(url, headers=headers, timeout=10)
+                        preco = None
+                        
+                        if resposta.status_code == 200:
+                            dados = resposta.json()
+                            meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
+                            preco = meta.get("regularMarketPrice")
+
+                        # Fallback seguro usando a biblioteca yfinance tradicional se a requisição leve falhar
+                        if preco is None:
+                            dados_sa = yf.Ticker(ticker_sa)
+                            preco = dados_sa.info.get("regularMarketPrice")
+                            if not preco:
+                                hist = dados_sa.history(period="1d")
+                                preco = hist["Close"].iloc[-1] if not hist.empty else dados_sa.history(period="5d")["Close"].iloc[-1]
+                        
+                        if preco is not None:
+                            preco_final = round(float(preco), 2)
+                            cotacoes[ativo] = preco_final
+                            
+                            # Aproveita e atualiza o cache global do servidor para as rotas do site também ficarem rápidas
+                            CACHE_COTCOES[ativo] = {"preco": preco_final, "timestamp": time.time()}
+
                     except Exception as e:
                         print(f"⚠️ Erro ao buscar cotação de {ativo} no loop: {e}")
 
+                # Avalia os disparos com as cotações recuperadas com sucesso
                 for alerta in alertas_ativos:
                     preco_atual = cotacoes.get(alerta.ativo)
                     if preco_atual is None:
@@ -495,9 +523,8 @@ def loop_monitoramento_b3():
                         disparar = True
 
                     if disparar:
-                        print(f"🚨 ALVO ATINGIDO: {alerta.ativo} chegou a R$ {preco_atual:.2f}")
+                        print(f"🚨 ALVO ATINGIDO NO LOOP: {alerta.ativo} chegou a R$ {preco_atual:.2f} (Alvo era R$ {alerta.preco_alvo:.2f})")
                         enviar_email_b3(alerta.email, alerta.ativo, alerta.preco_alvo, preco_atual, alerta.condicao)
-                        
                         alerta.ativo_sistema = False
                         db.commit()
 
@@ -506,6 +533,7 @@ def loop_monitoramento_b3():
         finally:
             db.close()
 
+        # Intervalo entre checagens do robô (300 segundos = 5 minutos)
         time.sleep(300)
 
 thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
