@@ -1,12 +1,13 @@
 import os
 import time
+import random
 import threading
 from datetime import datetime
 import requests
 from fastapi import FastAPI, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import yfinance as yf
@@ -53,6 +54,14 @@ class Alerta(Base):
     preco_alvo = Column(Float, nullable=False)
     condicao = Column(String, nullable=False)
     ativo_sistema = Column(Boolean, default=True)
+
+class CodigoCancelamento(Base):
+    __tablename__ = "codigos_cancelamento"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, index=True, nullable=False)
+    codigo = Column(String, nullable=False)
+    criado_em = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
 
@@ -117,6 +126,24 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     )
     enviar_email_via_resend(destino, f"🔔 Alerta B3: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
 
+def enviar_email_solicitacao_cancelamento(destino, alertas, codigo):
+    texto_alertas = ""
+    for a in alertas:
+        regra = "Maior ou igual" if a.condicao == "maior" else "Menor ou igual"
+        texto_alertas += f"- Ativo: {a.ativo} | Alvo: R$ {a.preco_alvo:.2f} | Regra: {regra}\n"
+        
+    corpo = (
+        f"🔒 SOLICITAÇÃO DE CANCELAMENTO DE MONITORAMENTO\n\n"
+        f"Identificamos que você solicitou o encerramento dos seus alertas ativos.\n\n"
+        f"📋 Seus monitoramentos atuais no sistema:\n"
+        f"{texto_alertas}\n"
+        f"🔑 Seu código de segurança para confirmar o cancelamento é:\n"
+        f"👉 {codigo} 👈\n\n"
+        f"Insira este número de 6 dígitos na tela do site para desativar todos os robôs acima.\n"
+        f"Se você não solicitou este código, apenas ignore este e-mail."
+    )
+    enviar_email_via_resend(destino, "🔒 Código de Segurança - Alerta B3", corpo)
+
 # ==========================================
 # 4. ROTAS DO FASTAPI (INTERFACE E APIS)
 # ==========================================
@@ -140,9 +167,18 @@ def pagina_inicial():
                 <p class="text-slate-400 mt-2 text-sm">Automação inteligente e sugestão de operação em tempo real.</p>
             </div>
 
+            <div class="flex border-b border-slate-800 mb-6">
+                <button id="tabCadastro" class="flex-1 pb-3 text-sm font-bold text-green-400 border-b-2 border-green-400 focus:outline-none">
+                    📝 Criar Alerta
+                </button>
+                <button id="tabCancelamento" class="flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300">
+                    🔒 Cancelar Monitoramento
+                </button>
+            </div>
+
             <form id="formB3" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, VALE3)</label>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
                     <div class="relative">
                         <input type="text" id="ativo" placeholder="Digite e clique fora..." required
                             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500 uppercase">
@@ -159,7 +195,6 @@ def pagina_inicial():
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
-                        <!-- Mudado para text para aplicar a máscara visual de dinheiro -->
                         <input type="text" id="preco" placeholder="R$ 0,00" required
                             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
                     </div>
@@ -177,10 +212,42 @@ def pagina_inicial():
                 </button>
             </form>
 
+            <div id="containerCancelamento" class="space-y-4 hidden">
+                <form id="formSolicitarCancelamento" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Digite seu E-mail Cadastrado</label>
+                        <input type="email" id="emailCancelamento" placeholder="seuemail@exemplo.com" required
+                            class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500">
+                    </div>
+                    <button type="submit" class="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-3 px-4 rounded-lg border border-red-500/30 transition duration-200">
+                        Solicitar Código de Segurança 🔑
+                    </button>
+                </form>
+
+                <form id="formConfirmarCancelamento" class="space-y-4 hidden border-t border-slate-800 pt-4">
+                    <div class="p-3 bg-blue-950/30 border border-blue-900/50 rounded-lg text-xs text-blue-300">
+                        📧 Enviamos a lista de monitoramentos e o código de 6 dígitos para o seu e-mail.
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código de Segurança recebido</label>
+                        <input type="text" id="codigoSeguranca" placeholder="Ex: 123456" maxlength="6" required
+                            class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-green-500">
+                    </div>
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                        Confirmar e Cancelar Monitoramentos 🔒
+                    </button>
+                </form>
+            </div>
+
             <div id="feedback" class="mt-6 hidden p-5 rounded-xl border"></div>
         </div>
 
         <script>
+            const tabCadastro = document.getElementById('tabCadastro');
+            const tabCancelamento = document.getElementById('tabCancelamento');
+            const formB3 = document.getElementById('formB3');
+            const containerCancelamento = document.getElementById('containerCancelamento');
+
             const inputAtivo = document.getElementById('ativo');
             const inputPreco = document.getElementById('preco');
             const selectCondicao = document.getElementById('condicao');
@@ -188,34 +255,40 @@ def pagina_inicial():
             const feedback = document.getElementById('feedback');
 
             let valorCotacaoAtual = 0;
-            let precoLimpoParaEnvio = 0; // Armazena o float puro (ex: 24.50)
+            let precoLimpoParaEnvio = 0;
 
-            // MÁSCARA EM TEMPO REAL: Transforma digitação pura em formato R$ 0,00
+            // GERENCIAMENTO DAS ABAS (TABS)
+            tabCadastro.addEventListener('click', () => {
+                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-green-400 border-b-2 border-green-400 focus:outline-none";
+                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300";
+                formB3.classList.remove('hidden');
+                containerCancelamento.classList.add('hidden');
+                feedback.classList.add('hidden');
+            });
+
+            tabCancelamento.addEventListener('click', () => {
+                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-red-400 border-b-2 border-red-400 focus:outline-none";
+                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300";
+                formB3.classList.add('hidden');
+                containerCancelamento.classList.remove('hidden');
+                feedback.classList.add('hidden');
+            });
+
+            // MÁSCARA EM TEMPO REAL
             inputPreco.addEventListener('input', (e) => {
-                let value = e.target.value.replace(/\D/g, ""); // Remove tudo que não for número
-                
+                let value = e.target.value.replace(/\D/g, "");
                 if (value === "") {
                     precoLimpoParaEnvio = 0;
                     e.target.value = "";
                     return;
                 }
-
-                // Converte a string numérica em float dividindo por 100 (casas centesimais)
                 precoLimpoParaEnvio = parseFloat(value) / 100;
-                
-                // Formata visualmente no padrão brasileiro
-                e.target.value = precoLimpoParaEnvio.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                });
-
-                // Executa a lógica de sugestão automática baseada no preço digitado
+                e.target.value = precoLimpoParaEnvio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                 executarSugestaoCondicao();
             });
 
-            function executarSugestaoCondicao() {
+            function ejecutarSugestaoCondicao() {
                 if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
-                
                 if (precoLimpoParaEnvio > valorCotacaoAtual) {
                     selectCondicao.value = "maior";
                 } else {
@@ -239,7 +312,7 @@ def pagina_inicial():
                         valorCotacaoAtual = dados.preco_atual;
                         precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-green-400";
                         precoTempoReal.innerText = `Cotação Atual: R$ ${valorCotacaoAtual.toFixed(2)}`;
-                        executarSugestaoCondicao(); // Reavalia caso o preço já estivesse preenchido
+                        executarSugestaoCondicao();
                     } else {
                         precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-red-500";
                         precoTempoReal.innerText = "Não encontrado";
@@ -252,10 +325,9 @@ def pagina_inicial():
                 }
             });
 
-            document.getElementById('formB3').addEventListener('submit', async (e) => {
+            // SUBMIT: CADASTRO
+            formB3.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const URL_API = '/api/alerta';
-
                 if (precoLimpoParaEnvio <= 0) {
                     alert("Por favor, digite um preço alvo válido.");
                     return;
@@ -266,17 +338,16 @@ def pagina_inicial():
                 feedback.classList.remove('hidden');
 
                 try {
-                    const response = await fetch(URL_API, {
+                    const response = await fetch('/api/alerta', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
                             'email': document.getElementById('email').value,
                             'ativo': inputAtivo.value,
-                            'preco_alvo': precoLimpoParaEnvio, // Envia o número decimal limpo para o Python
+                            'preco_alvo': precoLimpoParaEnvio,
                             'condicao': selectCondicao.value
                         })
                     });
-
                     const dados = await response.json();
 
                     if (dados.status === "sucesso") {
@@ -284,7 +355,6 @@ def pagina_inicial():
                         const corRegra = dados.condicao === "maior" ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-green-500/20 text-green-400 border-green-500/30";
 
                         feedback.className = "mt-6 p-5 rounded-xl border bg-slate-950 border-slate-800 text-left space-y-3 shadow-inner border-green-900/50";
-                        
                         feedback.innerHTML = `
                             <div class="border-b border-slate-800 pb-2">
                                 <span class="text-base font-bold text-green-400 block">🎉 PRÉ-CADASTRO REALIZADO COM SUCESSO!</span>
@@ -300,7 +370,7 @@ def pagina_inicial():
                                 📧 Um e-mail de confirmação foi enviado para: <span class="text-white underline">${dados.email}</span>
                             </div>
                         `;
-                        document.getElementById('formB3').reset();
+                        formB3.reset();
                         precoTempoReal.classList.add('hidden');
                         valorCotacaoAtual = 0;
                         precoLimpoParaEnvio = 0;
@@ -313,6 +383,70 @@ def pagina_inicial():
                     feedback.innerText = "Erro ao conectar com o servidor.";
                 }
             });
+
+            // SUBMIT: SOLICITAR CANCELAMENTO
+            document.getElementById('formSolicitarCancelamento').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const emailVal = document.getElementById('emailCancelamento').value;
+
+                feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
+                feedback.innerText = "Buscando cadastros e enviando código...";
+                feedback.classList.remove('hidden');
+
+                try {
+                    const response = await fetch('/api/cancelar/solicitar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ 'email': emailVal })
+                    });
+                    const dados = await response.json();
+
+                    if (dados.status === "sucesso") {
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-green-950/40 text-green-300 border-green-800 text-center text-sm font-medium";
+                        feedback.innerText = dados.mensagem;
+                        document.getElementById('formConfirmarCancelamento').classList.remove('hidden');
+                    } else {
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                        feedback.innerText = dados.mensagem;
+                    }
+                } catch (err) {
+                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                    feedback.innerText = "Erro de conexão com o servidor.";
+                }
+            });
+
+            // SUBMIT: CONFIRMAR CANCELAMENTO
+            document.getElementById('formConfirmarCancelamento').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const emailVal = document.getElementById('emailCancelamento').value;
+                const codigoVal = document.getElementById('codigoSeguranca').value;
+
+                feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
+                feedback.innerText = "Validando código e cancelando...";
+
+                try {
+                    const response = await fetch('/api/cancelar/confirmar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ 'email': emailVal, 'codigo': codigoVal })
+                    });
+                    const dados = await response.json();
+
+                    if (dados.status === "sucesso") {
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-950 text-red-400 border-red-900/50 text-center text-sm font-bold shadow-inner";
+                        feedback.innerText = `🔒 ${dados.mensagem}`;
+                        document.getElementById('formSolicitarCancelamento').reset();
+                        document.getElementById('formConfirmarCancelamento').reset();
+                        document.getElementById('formConfirmarCancelamento').classList.add('hidden');
+                    } else {
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                        feedback.innerText = dados.mensagem;
+                    }
+                } catch (err) {
+                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                    feedback.innerText = "Erro de conexão com o servidor.";
+                }
+            });
         </script>
     </body>
     </html>
@@ -321,7 +455,7 @@ def pagina_inicial():
 
 @app.get("/api/preco/{ativo}")
 @app.get("/api/preco")
-def obter_preco_ativo(ativo: str = None):
+def obtener_preco_ativo(ativo: str = None):
     if not ativo:
         return JSONResponse(status="erro", mensagem="O código do ativo é obrigatório."), 400
 
@@ -368,22 +502,14 @@ def obter_preco_ativo(ativo: str = None):
             "status": "sucesso",
             "ativo": nome_ativo,
             "preco_atual": preco_final,
-            "preco": preco_final,
-            "price": preco_final,
-            "valor": preco_final
+            "preco": preco_final
         }
         
     except Exception as e:
-        print(f"💥 Erro total na API de cotação para {ativo}: {e}")
+        print(f"💥 Erro na API de cotação para {ativo}: {e}")
         if nome_ativo in CACHE_COTCOES:
-            preco_antigo = CACHE_COTCOES[nome_ativo]["preco"]
-            return {
-                "status": "sucesso",
-                "ativo": nome_ativo,
-                "preco_atual": preco_antigo,
-                "preco": preco_antigo
-            }
-        return {"status": "erro", "mensagem": "Cotação indisponível no momento."}
+            return {"status": "sucesso", "ativo": nome_ativo, "preco_atual": CACHE_COTCOES[nome_ativo]["preco"]}
+        return {"status": "erro", "mensagem": "Cotação indisponível."}
 
 @app.post("/api/alerta")
 @app.post("/api/alerta/")
@@ -416,49 +542,80 @@ def configurar_alerta(
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             }
             resposta = requests.get(url, headers=headers, timeout=10)
-            
             if resposta.status_code == 200:
-                dados = resposta.json()
-                meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
-                preco_atual = meta.get("regularMarketPrice")
-
+                preco_atual = resposta.json().get("chart", {}).get("result", [{}])[0].get("meta", {}).get("regularMarketPrice")
             if preco_atual is None:
-                dados_acao = yf.Ticker(ticker_yahoo)
-                preco_atual = dados_acao.history(period="1d")["Close"].iloc[-1]
-                
+                preco_atual = yf.Ticker(ticker_yahoo).history(period="1d")["Close"].iloc[-1]
             preco_atual = round(float(preco_atual), 2)
             CACHE_COTCOES[ticker] = {"preco": preco_atual, "timestamp": tempo_atual}
-
         except Exception as e:
-            print(f"⚠️ Erro ao buscar cotação no cadastro de {ticker}: {e}")
+            print(f"⚠️ Erro ao buscar cotação de {ticker}: {e}")
             if ticker in CACHE_COTCOES:
                 preco_atual = CACHE_COTCOES[ticker]["preco"]
             else:
-                return {"status": "erro", "mensagem": f"Não foi possível validar o ativo {ticker}. Tente novamente."}
+                return {"status": "erro", "mensagem": "Falha ao validar ativo."}
 
-    novo_alerta = Alerta(
-        email=email.strip().lower(),
-        ativo=ticker,
-        preco_alvo=preco_alvo,
-        condicao=condicao,
-        ativo_sistema=True
-    )
+    novo_alerta = Alerta(email=email.strip().lower(), ativo=ticker, preco_alvo=preco_alvo, condicao=condicao, ativo_sistema=True)
     db.add(novo_alerta)
     db.commit()
 
     enviar_email_confirmacao(novo_alerta.email, novo_alerta.ativo, preco_atual, preco_alvo, condicao)
 
-    return {
-        "status": "sucesso",
-        "ativo": ticker,
-        "preco_atual": float(preco_atual),
-        "preco_alvo": float(preco_alvo),
-        "condicao": condicao,
-        "email": novo_alerta.email
-    }
+    return {"status": "sucesso", "ativo": ticker, "preco_atual": float(preco_atual), "preco_alvo": float(preco_alvo), "condicao": condicao, "email": novo_alerta.email}
+
+
+# ROTA: SOLICITAR CÓDIGO DE CANCELAMENTO
+@app.post("/api/cancelar/solicitar")
+def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)):
+    email_limpo = email.strip().lower()
+    
+    # Busca se o usuário tem monitoramentos ativos
+    alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
+    
+    if not alertas_ativos:
+        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
+        
+    # Gera um código aleatório de 6 dígitos
+    codigo_seguranca = str(random.randint(100000, 999999))
+    
+    # Remove códigos antigos deste e-mail para não acumular lixo
+    db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
+    
+    # Salva o novo código no banco
+    novo_codigo = CodigoCancelamento(email=email_limpo, codigo=codigo_seguranca)
+    db.add(novo_codigo)
+    db.commit()
+    
+    # Envia o e-mail com a lista de ativos e o token gerado
+    enviar_email_solicitacao_cancelamento(email_limpo, alertas_ativos, codigo_seguranca)
+    
+    return {"status": "sucesso", "mensagem": "Código enviado! Verifique sua caixa de entrada ou spam."}
+
+
+# ROTA: CONFIRMAR CÓDIGO E ENCERRAR RADAR
+@app.post("/api/cancelar/confirmar")
+def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), db: Session = Depends(get_db)):
+    email_limpo = email.strip().lower()
+    codigo_limpo = codigo.strip()
+    
+    # Procura pelo token correspondente no banco
+    registro_codigo = db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo, CodigoCancelamento.codigo == codigo_limpo).first()
+    
+    if not registro_codigo:
+        return {"status": "erro", "mensagem": "Código de segurança incorreto ou e-mail inválido."}
+        
+    # Desativa todos os alertas ativos deste e-mail (muda ativo_sistema para False)
+    alertas_desativados = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).update({"ativo_sistema": False})
+    
+    # Deleta o token usado
+    db.delete(registro_codigo)
+    db.commit()
+    
+    return {"status": "sucesso", "mensagem": f"Todos os seus monitoramentos ativos ({alertas_desativados}) foram encerrados com sucesso!"}
+
 
 # ==========================================
-# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO (BLINDADO)
+# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO
 # ==========================================
 
 def loop_monitoramento_b3():
@@ -470,47 +627,28 @@ def loop_monitoramento_b3():
 
             if alertas_ativos:
                 print(f"📊 Verificando {len(alertas_ativos)} monitoramentos no radar...")
-                
                 ativos_unicos = list(set([a.ativo for a in alertas_ativos]))
                 cotacoes = {}
 
                 for ativo in ativos_unicos:
                     try:
                         ticker_sa = f"{ativo}.SA"
-                        
-                        # 🛡️ CONSULTA LEVE E IDENTIFICADA VIA HTTP (Igual ao que funcionou nas APIs)
                         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_sa}"
-                        headers = {
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                        }
-                        
+                        headers = {"User-Agent": "Mozilla/5.0"}
                         resposta = requests.get(url, headers=headers, timeout=10)
                         preco = None
-                        
                         if resposta.status_code == 200:
-                            dados = resposta.json()
-                            meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
-                            preco = meta.get("regularMarketPrice")
-
-                        # Fallback seguro usando a biblioteca yfinance tradicional se a requisição leve falhar
+                            preco = resposta.json().get("chart", {}).get("result", [{}])[0].get("meta", {}).get("regularMarketPrice")
                         if preco is None:
-                            dados_sa = yf.Ticker(ticker_sa)
-                            preco = dados_sa.info.get("regularMarketPrice")
-                            if not preco:
-                                hist = dados_sa.history(period="1d")
-                                preco = hist["Close"].iloc[-1] if not hist.empty else dados_sa.history(period="5d")["Close"].iloc[-1]
+                            preco = yf.Ticker(ticker_sa).history(period="1d")["Close"].iloc[-1]
                         
                         if preco is not None:
                             preco_final = round(float(preco), 2)
                             cotacoes[ativo] = preco_final
-                            
-                            # Aproveita e atualiza o cache global do servidor para as rotas do site também ficarem rápidas
                             CACHE_COTCOES[ativo] = {"preco": preco_final, "timestamp": time.time()}
-
                     except Exception as e:
-                        print(f"⚠️ Erro ao buscar cotação de {ativo} no loop: {e}")
+                        print(f"⚠️ Erro no loop para {ativo}: {e}")
 
-                # Avalia os disparos com as cotações recuperadas com sucesso
                 for alerta in alertas_ativos:
                     preco_atual = cotacoes.get(alerta.ativo)
                     if preco_atual is None:
@@ -523,17 +661,13 @@ def loop_monitoramento_b3():
                         disparar = True
 
                     if disparar:
-                        print(f"🚨 ALVO ATINGIDO NO LOOP: {alerta.ativo} chegou a R$ {preco_atual:.2f} (Alvo era R$ {alerta.preco_alvo:.2f})")
                         enviar_email_b3(alerta.email, alerta.ativo, alerta.preco_alvo, preco_atual, alerta.condicao)
                         alerta.ativo_sistema = False
                         db.commit()
-
         except Exception as e:
-            print(f"💥 Erro crítico no loop do monitor: {e}")
+            print(f"💥 Erro no monitor: {e}")
         finally:
             db.close()
-
-        # Intervalo entre checagens do robô (300 segundos = 5 minutos)
         time.sleep(300)
 
 thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
