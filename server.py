@@ -332,17 +332,26 @@ def obter_preco_ativo(ativo: str):
             meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
             preco_atual = meta.get("regularMarketPrice")
             
-            if preco_atual is not None:
-                preco_final = round(float(preco_atual), 2)
-                
-                # Salva o resultado no Cache interno do servidor
-                CACHE_COTCOES[nome_ativo] = {
-                    "preco": preco_final,
-                    "timestamp": tempo_atual
-                }
-                print(f"🌍 [API YAHOO] Cotação de {nome_ativo} atualizada com sucesso via HTTP Direto: R$ {preco_final}")
-                return {"ativo": nome_ativo, "preco": preco_final}
-
+# ... (código anterior da rota)
+        if preco_atual is not None:
+            preco_final = round(float(preco_atual), 2)
+            
+            # Salva no cache
+            CACHE_COTCOES[nome_ativo] = {
+                "preco": preco_final,
+                "timestamp": tempo_atual
+            }
+            print(f"🌍 [API YAHOO] Cotação de {nome_ativo} atualizada: R$ {preco_final}")
+            
+            # 🔥 RETORNO BLINDADO: Devolve em todos os formatos que o seu HTML possa pedir!
+            return {
+                "ativo": nome_ativo,
+                "preco": preco_final,
+                "price": preco_final,        # Caso seu HTML espere em inglês
+                "valor": preco_final,        # Caso seu HTML espere 'valor'
+                "PRECO": preco_final,        # Caso seu HTML espere em maiúsculo
+                "PRICE": preco_final         # Caso seu HTML espere 'PRICE'
+            }
         # Se a API direta falhar, tenta usar a biblioteca yfinance tradicional como última alternativa
         print("⚠️ API Direta falhou ou retornou vazio. Tentando fallback via biblioteca yfinance...")
         dados_acao = yf.Ticker(ticker_yahoo)
@@ -358,9 +367,18 @@ def obter_preco_ativo(ativo: str):
         # 3. SISTEMA DE SEGURANÇA MÁXIMA: Se o Yahoo bloquear TOTALMENTE, mas nós tivermos
         # qualquer preço histórico guardado em cache (mesmo antigo), entregamos ele!
         # Isso impede que o seu site dê erro 404 na tela do cliente.
+# ... (dentro do except, na linha do emergência do cache)
         if nome_ativo in CACHE_COTCOES:
-            print(f"🛟 [EMERGÊNCIA] Servidores externos fora do ar. Entregando último preço conhecido para {nome_ativo}")
-            return {"ativo": nome_ativo, "preco": CACHE_COTCOES[nome_ativo]["preco"]}
+            preco_antigo = CACHE_COTCOES[nome_ativo]["preco"]
+            print(f"🛟 [EMERGÊNCIA] Entregando último preço em cache para {nome_ativo}")
+            return {
+                "ativo": nome_ativo,
+                "preco": preco_antigo,
+                "price": preco_antigo,
+                "valor": preco_antigo,
+                "PRECO": preco_antigo,
+                "PRICE": preco_antigo
+            }
             
         raise HTTPException(
             status_code=404, 
