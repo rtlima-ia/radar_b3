@@ -27,7 +27,7 @@ Base = declarative_base()
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alertab3@avisapramim.com.br")
 
-app = FastAPI(title="Avisa Pra Mim - Radar B3")
+app = FastAPI(title="Alerta B3 - Radar B3")
 
 # Habilitar CORS para evitar bloqueios de requisições vindas do navegador
 app.add_middleware(
@@ -80,7 +80,7 @@ def enviar_email_via_resend(destino, assunto, corpo_texto):
         "Content-Type": "application/json"
     }
     payload = {
-        "from": f"Avisa Pra Mim <{EMAIL_REMETENTE}>",
+        "from": f"Alerta B3 <{EMAIL_REMETENTE}>",
         "to": [destino],
         "subject": assunto,
         "text": corpo_texto
@@ -103,9 +103,9 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"📊 Cotação Atual de Mercado: R$ {preco_atual:.2f}\n"
         f"🎯 Seu Preço Alvo: R$ {preco_alvo:.2f}\n"
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
-        f"O Avisa Pra Mim enviará uma mensagem assim que este objetivo for atingido!"
+        f"O Alerta B3 enviará uma mensagem assim que este objetivo for atingido!"
     )
-    enviar_email_via_resend(destino, f"📡 Avisa Pra Mim: Monitoramento de {ativo} Ativado!", corpo)
+    enviar_email_via_resend(destino, f"📡 Alerta B3: Monitoramento de {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == "maior" else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
@@ -117,7 +117,7 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
         f"Preço Atual de Mercado: R$ {preco_atual:.2f}\n\n"
         f"Este monitoramento foi encerrado e removido do radar dinâmico."
     )
-    enviar_email_via_resend(destino, f"🔔 Avisa Pra Mim: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
+    enviar_email_via_resend(destino, f"🔔 Alerta B3: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
 
 # ==========================================
 # 4. ROTAS DO FASTAPI (INTERFACE E APIS)
