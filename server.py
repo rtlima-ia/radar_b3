@@ -29,7 +29,7 @@ Base = declarative_base()
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alertab3@avisapramim.com.br")
 
-app = FastAPI(title="Avisa Pra Mim - Radar B3")
+app = FastAPI(title="Alerta B3 - Radar B3")
 
 app.add_middleware(
     CORSMiddleware,
@@ -88,7 +88,7 @@ def enviar_email_via_resend(destino, assunto, corpo_texto):
         "Content-Type": "application/json"
     }
     payload = {
-        "from": f"Avisa Pra Mim <{EMAIL_REMETENTE}>",
+        "from": f"Alerta B3 <{EMAIL_REMETENTE}>",
         "to": [destino],
         "subject": assunto,
         "text": corpo_texto
@@ -111,9 +111,9 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"📊 Cotação Atual de Mercado: R$ {preco_atual:.2f}\n"
         f"🎯 Seu Preço Alvo: R$ {preco_alvo:.2f}\n"
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
-        f"O Avisa Pra Mim enviará uma mensagem assim que este objetivo for atingido!"
+        f"O Alerta B3 enviará uma mensagem assim que este objetivo for atingido!"
     )
-    enviar_email_via_resend(destino, f"📡 Avisa Pra Mim: Monitoramento de {ativo} Ativado!", corpo)
+    enviar_email_via_resend(destino, f"📡 Monitoramento {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == "maior" else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
@@ -125,18 +125,48 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
         f"Preço Atual de Mercado: R$ {preco_atual:.2f}\n\n"
         f"Este monitoramento foi encerrado e removido do radar dinâmico."
     )
-    enviar_email_via_resend(destino, f"🔔 Avisa Pra Mim: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
+    enviar_email_via_resend(destino, f"🔔 Alerta B3: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
 
 def enviar_email_token_consulta(destino, codigo):
     corpo = (
-        f"🔑 SEU CÓDIGO DE ACESSO — AVISA PRA MIM\n\n"
+        f"🔑 SEU CÓDIGO DE ACESSO — Alerta B3\n\n"
         f"Você solicitou a consulta dos seus monitoramentos ativos.\n\n"
         f"Utilize o código de segurança abaixo no site para carregar a sua lista de robôs em tempo real:\n"
         f"👉 {codigo} 👈\n\n"
         f"Após inserir este código, você poderá selecionar individualmente quais alertas deseja manter ou desativar.\n"
         f"Se você não solicitou este acesso, apenas ignore este e-mail."
     )
-    enviar_email_via_resend(destino, "🔒 Código de Acesso - Avisa Pra Mim", corpo)
+    enviar_email_via_resend(destino, "🔒 Código de Acesso - Alerta B3", corpo)
+
+# Função auxiliar interna para buscar preço com segurança de cache
+def obter_preco_interno(ativo_nome: str) -> float:
+    nome_ativo = ativo_nome.strip().upper()
+    ticker_yahoo = f"{nome_ativo}.SA" if not nome_ativo.endswith(".SA") else nome_ativo
+    nome_ativo = nome_ativo.replace(".SA", "")
+    tempo_atual = time.time()
+
+    if nome_ativo in CACHE_COTCOES:
+        dados_cache = CACHE_COTCOES[nome_ativo]
+        if tempo_atual - dados_cache["timestamp"] < CACHE_EXPIRACAO_SEGUNDOS:
+            return float(dados_cache["preco"])
+
+    try:
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        resposta = requests.get(url, headers=headers, timeout=5)
+        preco_atual = None
+        if resposta.status_code == 200:
+            preco_atual = resposta.json().get("chart", {}).get("result", [{}])[0].get("meta", {}).get("regularMarketPrice")
+        if preco_atual is None:
+            preco_atual = yf.Ticker(ticker_yahoo).history(period="1d")["Close"].iloc[-1]
+        
+        preco_final = round(float(preco_atual), 2)
+        CACHE_COTCOES[nome_ativo] = {"preco": preco_final, "timestamp": tempo_atual}
+        return preco_final
+    except Exception:
+        if nome_ativo in CACHE_COTCOES:
+            return CACHE_COTCOES[nome_ativo]["preco"]
+        return 0.0
 
 # ==========================================
 # 4. ROTAS DO FASTAPI (INTERFACE E APIS)
@@ -258,11 +288,9 @@ def pagina_inicial():
             let valorCotacaoAtual = 0;
             let precoLimpoParaEnvio = 0;
 
-            // FIX CORRIGIDO: GERENCIAMENTO DE ABAS SEGURO
             tabCadastro.addEventListener('click', () => {
                 tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-green-400 border-b-2 border-green-400 focus:outline-none";
                 tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300";
-                
                 formB3.classList.remove('hidden');
                 containerCancelamento.classList.add('hidden');
                 feedback.classList.add('hidden');
@@ -271,14 +299,12 @@ def pagina_inicial():
             tabCancelamento.addEventListener('click', () => {
                 tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-blue-400 border-b-2 border-blue-400 focus:outline-none";
                 tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300";
-                
                 formB3.classList.add('hidden');
-                containerCancelamento.classList.remove('hidden'); // Mostra o container pai
-                formSolicitarCancelamento.classList.remove('hidden'); // Garante que o campo de e-mail apareça
+                containerCancelamento.classList.remove('hidden');
+                formSolicitarCancelamento.classList.remove('hidden');
                 feedback.classList.add('hidden');
             });
 
-            // MÁSCARA EM TEMPO REAL
             inputPreco.addEventListener('input', (e) => {
                 let value = e.target.value.replace(/\D/g, "");
                 if (value === "") {
@@ -329,7 +355,6 @@ def pagina_inicial():
                 }
             });
 
-            // SUBMIT: CADASTRO
             formB3.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (precoLimpoParaEnvio <= 0) {
@@ -388,7 +413,6 @@ def pagina_inicial():
                 }
             });
 
-            // SUBMIT: SOLICITAR CÓDIGO
             formSolicitarCancelamento.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const emailVal = document.getElementById('emailCancelamento').value;
@@ -419,14 +443,13 @@ def pagina_inicial():
                 }
             });
 
-            // SUBMIT: RECUPERAR E LISTAR ITENS
             document.getElementById('formAutenticarConsulta').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const emailVal = document.getElementById('emailCancelamento').value;
                 const codigoVal = document.getElementById('codigoSeguranca').value;
 
                 feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
-                feedback.innerText = "Autenticando e extraindo monitoramentos...";
+                feedback.innerText = "Autenticando e extraindo monitoramentos com cotações em tempo real...";
                 feedback.classList.remove('hidden');
 
                 try {
@@ -443,15 +466,21 @@ def pagina_inicial():
                         listaDiv.innerHTML = "";
 
                         dados.alertas.forEach(alerta => {
-                            const regraTexto = alerta.condicao === "maior" ? "📈 >= R$" : "📉 <= R$";
+                            const regraTexto = alerta.condicao === "maior" ? "📈 >=" : "📉 <=";
+                            const precoAtualTexto = alerta.preco_atual > 0 ? `R$ ${alerta.preco_atual.toFixed(2)}` : "Carregando...";
+                            
+                            // VISUAL AJUSTADO: Adicionado preço atual do mercado na listagem
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-700 cursor-pointer transition">
                                     <div class="flex items-center gap-3">
                                         <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-green-500 cursor-pointer checkbox-alerta-cancelar">
-                                        <span class="font-bold text-white tracking-wide uppercase">${alerta.ativo}</span>
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-white tracking-wide uppercase">${alerta.ativo}</span>
+                                            <span class="text-[10px] text-slate-500">Mercado: <b class="text-green-400">${precoAtualTexto}</b></span>
+                                        </div>
                                     </div>
-                                    <div class="text-xs font-semibold text-slate-400">
-                                        Regra: <span class="text-slate-200">${regraTexto} ${alerta.preco_alvo.toFixed(2)}</span>
+                                    <div class="text-xs font-semibold text-slate-400 text-right">
+                                        Alvo: <span class="text-slate-200">${regraTexto} R$ ${alerta.preco_alvo.toFixed(2)}</span>
                                     </div>
                                 </label>
                             `;
@@ -470,7 +499,6 @@ def pagina_inicial():
                 }
             });
 
-            // SUBMIT: CONFIRMAR EXCLUSÃO SELECIONADA
             document.getElementById('btnConfirmarCancelamentoLote').addEventListener('click', async () => {
                 const checkboxes = document.querySelectorAll('.checkbox-alerta-cancelar:checked');
                 const idsParaCancelar = Array.from(checkboxes).map(cb => cb.value);
@@ -528,56 +556,10 @@ def pagina_inicial():
 def obter_preco_ativo(ativo: str = None):
     if not ativo:
         return {"status": "erro", "mensagem": "O código do ativo é obrigatório."}
-
-    ticker = ativo.strip().upper()
-    if not ticker.endswith(".SA"):
-        ticker_yahoo = f"{ticker}.SA"
-    else:
-        ticker_yahoo = ticker
-        
-    nome_ativo = ticker.replace(".SA", "")
-    tempo_atual = time.time()
-
-    if nome_ativo in CACHE_COTCOES:
-        dados_cache = CACHE_COTCOES[nome_ativo]
-        if tempo_atual - dados_cache["timestamp"] < CACHE_EXPIRACAO_SEGUNDOS:
-            return {
-                "status": "sucesso", 
-                "ativo": nome_ativo, 
-                "preco_atual": float(dados_cache["preco"])
-            }
-
-    try:
-        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
-        resposta = requests.get(url, headers=headers, timeout=10)
-        
-        preco_atual = None
-        if resposta.status_code == 200:
-            dados = resposta.json()
-            meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
-            preco_atual = meta.get("regularMarketPrice")
-
-        if preco_atual is None:
-            dados_acao = yf.Ticker(ticker_yahoo)
-            preco_atual = dados_acao.history(period="1d")["Close"].iloc[-1]
-            
-        preco_final = round(float(preco_atual), 2)
-        CACHE_COTCOES[nome_ativo] = {"preco": preco_final, "timestamp": tempo_atual}
-        
-        return {
-            "status": "sucesso",
-            "ativo": nome_ativo,
-            "preco_atual": preco_final
-        }
-        
-    except Exception as e:
-        print(f"💥 Erro na API de cotação para {ativo}: {e}")
-        if nome_ativo in CACHE_COTCOES:
-            return {"status": "sucesso", "ativo": nome_ativo, "preco_atual": CACHE_COTCOES[nome_ativo]["preco"]}
-        return {"status": "erro", "mensagem": "Cotação indisponível."}
+    preco = obter_preco_interno(ativo)
+    if preco > 0:
+        return {"status": "sucesso", "ativo": ativo.strip().upper(), "preco_atual": preco}
+    return {"status": "erro", "mensagem": "Cotação indisponível."}
 
 @app.post("/api/alerta")
 @app.post("/api/alerta/")
@@ -595,33 +577,9 @@ def configurar_alerta(
         ticker_yahoo = ticker
         ticker = ticker.replace(".SA", "")
 
-    tempo_atual = time.time()
-    preco_atual = None
-
-    if ticker in CACHE_COTCOES:
-        dados_cache = CACHE_COTCOES[ticker]
-        if tempo_atual - dados_cache["timestamp"] < CACHE_EXPIRACAO_SEGUNDOS:
-            preco_atual = dados_cache["preco"]
-
-    if preco_atual is None:
-        try:
-            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            }
-            resposta = requests.get(url, headers=headers, timeout=10)
-            if resposta.status_code == 200:
-                preco_atual = resposta.json().get("chart", {}).get("result", [{}])[0].get("meta", {}).get("regularMarketPrice")
-            if preco_atual is None:
-                preco_atual = yf.Ticker(ticker_yahoo).history(period="1d")["Close"].iloc[-1]
-            preco_atual = round(float(preco_atual), 2)
-            CACHE_COTCOES[ticker] = {"preco": preco_atual, "timestamp": tempo_atual}
-        except Exception as e:
-            print(f"⚠️ Erro ao buscar cotação de {ticker}: {e}")
-            if ticker in CACHE_COTCOES:
-                preco_atual = CACHE_COTCOES[ticker]["preco"]
-            else:
-                return {"status": "erro", "mensagem": "Falha ao validar ativo."}
+    preco_atual = obter_preco_interno(ticker)
+    if preco_atual == 0.0:
+        return {"status": "erro", "mensagem": "Falha ao validar cotação do ativo."}
 
     novo_alerta = Alerta(email=email.strip().lower(), ativo=ticker, preco_alvo=preco_alvo, condicao=condicao, ativo_sistema=True)
     db.add(novo_alerta)
@@ -629,9 +587,8 @@ def configurar_alerta(
 
     enviar_email_confirmacao(novo_alerta.email, novo_alerta.ativo, preco_atual, preco_alvo, condicao)
 
-    return {"status": "sucesso", "ativo": ticker, "preco_atual": float(preco_atual), "preco_alvo": float(preco_alvo), "condicao": condicao, "email": novo_alerta.email}
+    return {"status": "sucesso", "ativo": ticker, "preco_atual": preco_atual, "preco_alvo": preco_alvo, "condicao": condicao, "email": novo_alerta.email}
 
-# ROTA: SOLICITAR TOKEN DE ACESSO
 @app.post("/api/cancelar/solicitar")
 def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
@@ -650,7 +607,7 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     enviar_email_token_consulta(email_limpo, codigo_seguranca)
     return {"status": "sucesso", "mensagem": "Código de consulta enviado com sucesso para a sua caixa de entrada!"}
 
-# ROTA: AUTENTICAR E RETORNAR LISTA DE MONITORAMENTOS
+# ROTA ATUALIZADA: Puxa o preço atual de mercado para cada item listado
 @app.post("/api/cancelar/listar")
 def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
@@ -661,11 +618,21 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
         raise HTTPException(status_code=403, detail="Código inválido ou e-mail incorreto.")
         
     alertas = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
-    lista_alertas = [{"id": a.id, "ativo": a.ativo, "preco_alvo": a.preco_alvo, "condicao": a.condicao} for a in alertas]
+    
+    lista_alertas = []
+    for a in alertas:
+        # Busca em tempo real/cache o preço de mercado atualizado para listar na tela do investidor
+        preco_mercado = obter_preco_interno(a.ativo)
+        lista_alertas.append({
+            "id": a.id, 
+            "ativo": a.ativo, 
+            "preco_alvo": a.preco_alvo, 
+            "condicao": a.condicao,
+            "preco_atual": preco_mercado
+        })
     
     return {"status": "sucesso", "alertas": lista_alertas}
 
-# ROTA: CONFIRMAR CANCELAMENTO CIRÚRGICO
 @app.post("/api/cancelar/confirmar")
 def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
@@ -676,7 +643,6 @@ def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids:
         return {"status": "erro", "mensagem": "Token de segurança inválido."}
         
     lista_ids = [int(x) for x in ids.split(",") if x.strip().isdigit()]
-    
     if not lista_ids:
         return {"status": "erro", "mensagem": "Nenhum monitoramento válido foi selecionado."}
         
@@ -691,40 +657,21 @@ def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids:
     
     return {"status": "sucesso", "mensagem": f"Sucesso! {alertas_desativados} monitoramento(s) selecionado(s) foi(ram) encerrado(s)."}
 
-# ==========================================
-# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO
-# ==========================================
-
 def loop_monitoramento_b3():
     print("🤖 Robô de monitoramento de ativos B3 iniciado com sucesso!")
     while True:
         db = SessionLocal()
         try:
             alertas_ativos = db.query(Alerta).filter(Alerta.ativo_sistema == True).all()
-
             if alertas_ativos:
                 print(f"📊 Verificando {len(alertas_ativos)} monitoramentos no radar...")
                 ativos_unicos = list(set([a.ativo for a in alertas_ativos]))
                 cotacoes = {}
 
                 for ativo in ativos_unicos:
-                    try:
-                        ticker_sa = f"{ativo}.SA"
-                        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_sa}"
-                        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-                        resposta = requests.get(url, headers=headers, timeout=10)
-                        preco = None
-                        if resposta.status_code == 200:
-                            preco = resposta.json().get("chart", {}).get("result", [{}])[0].get("meta", {}).get("regularMarketPrice")
-                        if preco is None:
-                            preco = yf.Ticker(ticker_sa).history(period="1d")["Close"].iloc[-1]
-                        
-                        if preco is not None:
-                            preco_final = round(float(preco), 2)
-                            cotacoes[ativo] = preco_final
-                            CACHE_COTCOES[ativo] = {"preco": preco_final, "timestamp": time.time()}
-                    except Exception as e:
-                        print(f"⚠️ Erro no loop para {ativo}: {e}")
+                    preco = obter_preco_interno(ativo)
+                    if preco > 0:
+                        cotacoes[ativo] = preco
 
                 for alerta in alertas_ativos:
                     preco_atual = cotacoes.get(alerta.ativo)
