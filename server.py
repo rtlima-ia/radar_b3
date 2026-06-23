@@ -27,9 +27,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alertab3@avisapramim.com.br")
+# 🟢 Atualizado para o novo e-mail padrão do domínio b3alerta.com.br
+EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alerta@b3alerta.com.br")
 
-app = FastAPI(title="Alerta B3 - Radar B3")
+# 🟢 Atualizado o título da aplicação
+app = FastAPI(title="B3 Alerta - Radar B3")
 
 app.add_middleware(
     CORSMiddleware,
@@ -88,7 +90,7 @@ def enviar_email_via_resend(destino, assunto, corpo_texto):
         "Content-Type": "application/json"
     }
     payload = {
-        "from": f"Alerta B3 <{EMAIL_REMETENTE}>",
+        "from": f"B3 Alerta <{EMAIL_REMETENTE}>", # 🟢 Nome de exibição atualizado
         "to": [destino],
         "subject": assunto,
         "text": corpo_texto
@@ -111,7 +113,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"📊 Cotação Atual de Mercado: R$ {preco_atual:.2f}\n"
         f"🎯 Seu Preço Alvo: R$ {preco_alvo:.2f}\n"
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
-        f"O Alerta B3 enviará uma mensagem assim que este objetivo for atingido!"
+        f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!" # 🟢 Texto atualizado
     )
     enviar_email_via_resend(destino, f"📡 Monitoramento {ativo} Ativado!", corpo)
 
@@ -125,18 +127,18 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
         f"Preço Atual de Mercado: R$ {preco_atual:.2f}\n\n"
         f"Este monitoramento foi encerrado e removido do radar dinâmico."
     )
-    enviar_email_via_resend(destino, f"🔔 Alerta B3: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
+    enviar_email_via_resend(destino, f"🔔 B3 Alerta: {ativo} atingiu R$ {preco_atual:.2f}!", corpo) # 🟢 Texto atualizado
 
 def enviar_email_token_consulta(destino, codigo):
     corpo = (
-        f"🔑 SEU CÓDIGO DE ACESSO — Alerta B3\n\n"
+        f"🔑 SEU CÓDIGO DE ACESSO — B3 Alerta\n\n" # 🟢 Texto atualizado
         f"Você solicitou a consulta dos seus monitoramentos ativos.\n\n"
         f"Utilize o código de segurança abaixo no site para carregar a sua lista de robôs em tempo real:\n"
         f"👉 {codigo} 👈\n\n"
         f"Após inserir este código, você poderá selecionar individualmente quais alertas deseja manter ou desativar.\n"
         f"Se você não solicitou este acesso, apenas ignore este e-mail."
     )
-    enviar_email_via_resend(destino, "🔒 Código de Acesso - Alerta B3", corpo)
+    enviar_email_via_resend(destino, "🔒 Código de Acesso - B3 Alerta", corpo) # 🟢 Texto atualizado
 
 # Função auxiliar interna para buscar preço com segurança de cache
 def obter_preco_interno(ativo_nome: str) -> float:
@@ -180,15 +182,15 @@ def pagina_inicial():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Radar B3 - Inteligente</title>
+        <title>B3 Alerta - Radar Inteligente</title> <!-- 🟢 Título HTML atualizado -->
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center font-sans p-4">
 
         <div class="max-w-xl w-full bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800">
             <div class="text-center mb-6">
-                <h1 class="text-3xl font-extrabold text-green-400">📡 Radar B3</h1>
-                <p class="text-slate-400 mt-2 text-sm">Automação inteligente de monitoriamento em tempo real.</p>
+                <h1 class="text-3xl font-extrabold text-green-400">📡 B3 Alerta</h1> <!-- 🟢 Título principal atualizado -->
+                <p class="text-slate-400 mt-2 text-sm">Automação inteligente de monitoramento em tempo real.</p>
             </div>
 
             <div class="flex border-b border-slate-800 mb-6">
@@ -469,7 +471,6 @@ def pagina_inicial():
                             const regraTexto = alerta.condicao === "maior" ? "📈 >=" : "📉 <=";
                             const precoAtualTexto = alerta.preco_atual > 0 ? `R$ ${alerta.preco_atual.toFixed(2)}` : "Carregando...";
                             
-                            // VISUAL AJUSTADO: Adicionado preço atual do mercado na listagem
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-700 cursor-pointer transition">
                                     <div class="flex items-center gap-3">
@@ -607,7 +608,6 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     enviar_email_token_consulta(email_limpo, codigo_seguranca)
     return {"status": "sucesso", "mensagem": "Código de consulta enviado com sucesso para a sua caixa de entrada!"}
 
-# ROTA ATUALIZADA: Puxa o preço atual de mercado para cada item listado
 @app.post("/api/cancelar/listar")
 def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
@@ -621,7 +621,6 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
     
     lista_alertas = []
     for a in alertas:
-        # Busca em tempo real/cache o preço de mercado atualizado para listar na tela do investidor
         preco_mercado = obter_preco_interno(a.ativo)
         lista_alertas.append({
             "id": a.id, 
