@@ -3,6 +3,7 @@ import time
 import random
 import threading
 from datetime import datetime
+from typing import List
 import requests
 from fastapi import FastAPI, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -28,9 +29,8 @@ Base = declarative_base()
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alertab3@avisapramim.com.br")
 
-app = FastAPI(title="Alerta B3 - Radar B3")
+app = FastAPI(title="Avisa Pra Mim - Radar B3")
 
-# Habilitar CORS para evitar bloqueios de requisições vindas do navegador
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -39,7 +39,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Cache Global na memória do servidor para evitar erro "Too Many Requests" do Yahoo
 CACHE_COTCOES = {}
 CACHE_EXPIRACAO_SEGUNDOS = 60  
 
@@ -89,7 +88,7 @@ def enviar_email_via_resend(destino, assunto, corpo_texto):
         "Content-Type": "application/json"
     }
     payload = {
-        "from": f"Alerta B3 <{EMAIL_REMETENTE}>",
+        "from": f"Avisa Pra Mim <{EMAIL_REMETENTE}>",
         "to": [destino],
         "subject": assunto,
         "text": corpo_texto
@@ -112,9 +111,9 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"📊 Cotação Atual de Mercado: R$ {preco_atual:.2f}\n"
         f"🎯 Seu Preço Alvo: R$ {preco_alvo:.2f}\n"
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
-        f"O Alerta B3 enviará uma mensagem assim que este objetivo for atingido!"
+        f"O Avisa Pra Mim enviará uma mensagem assim que este objetivo for atingido!"
     )
-    enviar_email_via_resend(destino, f"📡 Monitoramento {ativo} Ativado!", corpo)
+    enviar_email_via_resend(destino, f"📡 Avisa Pra Mim: Monitoramento de {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == "maior" else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
@@ -126,25 +125,18 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
         f"Preço Atual de Mercado: R$ {preco_atual:.2f}\n\n"
         f"Este monitoramento foi encerrado e removido do radar dinâmico."
     )
-    enviar_email_via_resend(destino, f"🔔 Alerta B3: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
+    enviar_email_via_resend(destino, f"🔔 Avisa Pra Mim: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
 
-def enviar_email_solicitacao_cancelamento(destino, alertas, codigo):
-    texto_alertas = ""
-    for a in alertas:
-        regra = "Maior ou igual" if a.condicao == "maior" else "Menor ou igual"
-        texto_alertas += f"- Ativo: {a.ativo} | Alvo: R$ {a.preco_alvo:.2f} | Regra: {regra}\n"
-        
+def enviar_email_token_consulta(destino, codigo):
     corpo = (
-        f"🔒 SOLICITAÇÃO DE CANCELAMENTO DE MONITORAMENTO\n\n"
-        f"Identificamos que você solicitou o encerramento dos seus alertas ativos.\n\n"
-        f"📋 Seus monitoramentos atuais no sistema:\n"
-        f"{texto_alertas}\n"
-        f"🔑 Seu código de segurança para confirmar o cancelamento é:\n"
+        f"🔑 SEU CÓDIGO DE ACESSO — AVISA PRA MIM\n\n"
+        f"Você solicitou a consulta dos seus monitoramentos ativos.\n\n"
+        f"Utilize o código de segurança abaixo no site para carregar a sua lista de robôs em tempo real:\n"
         f"👉 {codigo} 👈\n\n"
-        f"Insira este número de 6 dígitos na tela do site para desativar todos os robôs acima.\n"
-        f"Se você não solicitou este código, apenas ignore este e-mail."
+        f"Após inserir este código, você poderá selecionar individualmente quais alertas deseja manter ou desativar.\n"
+        f"Se você não solicitou este acesso, apenas ignore este e-mail."
     )
-    enviar_email_via_resend(destino, "🔒 Código de Segurança - Alerta B3", corpo)
+    enviar_email_via_resend(destino, "🔒 Código de Acesso - Avisa Pra Mim", corpo)
 
 # ==========================================
 # 4. ROTAS DO FASTAPI (INTERFACE E APIS)
@@ -174,7 +166,7 @@ def pagina_inicial():
                     📝 Criar Alerta
                 </button>
                 <button id="tabCancelamento" class="flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300">
-                    🔒 Cancelar Monitoramento
+                    🔍 Consultar & Cancelar
                 </button>
             </div>
 
@@ -217,28 +209,34 @@ def pagina_inicial():
             <div id="containerCancelamento" class="space-y-4 hidden">
                 <form id="formSolicitarCancelamento" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Digite seu E-mail Cadastrado</label>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Seu E-mail Cadastrado</label>
                         <input type="email" id="emailCancelamento" placeholder="seuemail@exemplo.com" required
-                            class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500">
+                            class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
                     </div>
-                    <button type="submit" class="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold py-3 px-4 rounded-lg border border-red-500/30 transition duration-200">
-                        Solicitar Código de Segurança 🔑
+                    <button type="submit" class="w-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 font-bold py-3 px-4 rounded-lg border border-blue-500/30 transition duration-200">
+                        Solicitar Código de Consulta 🔑
                     </button>
                 </form>
 
-                <form id="formConfirmarCancelamento" class="space-y-4 hidden border-t border-slate-800 pt-4">
-                    <div class="p-3 bg-blue-950/30 border border-blue-900/50 rounded-lg text-xs text-blue-300">
-                        📧 Enviamos a lista de monitoramentos e o código de 6 dígitos para o seu e-mail.
-                    </div>
+                <form id="formAutenticarConsulta" class="space-y-4 hidden border-t border-slate-800 pt-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código de Segurança recebido</label>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Insira o Código de 6 Dígitos</label>
                         <input type="text" id="codigoSeguranca" placeholder="Ex: 123456" maxlength="6" required
                             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-green-500">
                     </div>
-                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
-                        Confirmar e Cancelar Monitoramentos 🔒
+                    <button type="submit" class="w-full bg-green-500 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                        Buscar Meus Monitoramentos 🔍
                     </button>
                 </form>
+
+                <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-slate-800 pt-4">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
+                    <div id="listaAlertasDinamica" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                        </div>
+                    <button id="btnConfirmarCancelamentoLote" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg hidden">
+                        Cancelar Itens Selecionados 🔒
+                    </button>
+                </div>
             </div>
 
             <div id="feedback" class="mt-6 hidden p-5 rounded-xl border"></div>
@@ -269,7 +267,7 @@ def pagina_inicial():
             });
 
             tabCancelamento.addEventListener('click', () => {
-                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-red-400 border-b-2 border-red-400 focus:outline-none";
+                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-blue-400 border-b-2 border-blue-400 focus:outline-none";
                 tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300";
                 formB3.classList.add('hidden');
                 containerCancelamento.classList.remove('hidden');
@@ -386,13 +384,13 @@ def pagina_inicial():
                 }
             });
 
-            // SUBMIT: SOLICITAR CANCELAMENTO
+            // SUBMIT: SOLICITAR CÓDIGO
             document.getElementById('formSolicitarCancelamento').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const emailVal = document.getElementById('emailCancelamento').value;
 
                 feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
-                feedback.innerText = "Buscando cadastros e enviando código...";
+                feedback.innerText = "Validando cadastros e gerando token...";
                 feedback.classList.remove('hidden');
 
                 try {
@@ -404,30 +402,30 @@ def pagina_inicial():
                     const dados = await response.json();
 
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-green-950/40 text-green-300 border-green-800 text-center text-sm font-medium";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/50 text-blue-300 border-blue-800 text-center text-sm font-medium";
                         feedback.innerText = dados.mensagem;
-                        document.getElementById('formConfirmarCancelamento').classList.remove('hidden');
+                        document.getElementById('formAutenticarConsulta').classList.remove('hidden');
                     } else {
                         feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
                         feedback.innerText = dados.mensagem;
                     }
                 } catch (err) {
                     feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
-                    feedback.innerText = "Erro de conexão com o servidor.";
+                    feedback.innerText = "Erro de conexão.";
                 }
             });
 
-            // SUBMIT: CONFIRMAR CANCELAMENTO
-            document.getElementById('formConfirmarCancelamento').addEventListener('submit', async (e) => {
+            // SUBMIT: RECUPERAR E LISTAR ITENS (NOVO)
+            document.getElementById('formAutenticarConsulta').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const emailVal = document.getElementById('emailCancelamento').value;
                 const codigoVal = document.getElementById('codigoSeguranca').value;
 
                 feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
-                feedback.innerText = "Validando código e cancelando...";
+                feedback.innerText = "Autenticando e extraindo monitoramentos...";
 
                 try {
-                    const response = await fetch('/api/cancelar/confirmar', {
+                    const response = await fetch('/api/cancelar/listar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ 'email': emailVal, 'codigo': codigoVal })
@@ -435,18 +433,84 @@ def pagina_inicial():
                     const dados = await response.json();
 
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-950 text-red-400 border-red-900/50 text-center text-sm font-bold shadow-inner";
-                        feedback.innerText = `🔒 ${dados.mensagem}`;
-                        document.getElementById('formSolicitarCancelamento').reset();
-                        document.getElementById('formConfirmarCancelamento').reset();
-                        document.getElementById('formConfirmarCancelamento').classList.add('hidden');
+                        feedback.classList.add('hidden'); // Oculta o carregando
+                        const listaDiv = document.getElementById('listaAlertasDinamica');
+                        listaDiv.innerHTML = ""; // Limpa itens anteriores
+
+                        dados.alertas.forEach(alerta => {
+                            const regraTexto = alerta.condicao === "maior" ? "📈 >= R$" : "📉 <= R$";
+                            const itemHtml = `
+                                <label class="flex items-center justify-between p-3 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-700 cursor-pointer transition">
+                                    <div class="flex items-center gap-3">
+                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-green-500 cursor-pointer checkbox-alerta-cancelar">
+                                        <span class="font-bold text-white tracking-wide uppercase">${alerta.ativo}</span>
+                                    </div>
+                                    <div class="text-xs font-semibold text-slate-400">
+                                        Regra: <span class="text-slate-200">${regraTexto} ${alerta.preco_alvo.toFixed(2)}</span>
+                                    </div>
+                                </label>
+                            `;
+                            listaDiv.insertAdjacentHTML('beforeend', itemHtml);
+                        });
+
+                        document.getElementById('wrapperListagemAlertas').classList.remove('hidden');
+                        document.getElementById('btnConfirmarCancelamentoLote').classList.remove('hidden');
                     } else {
                         feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
                         feedback.innerText = dados.mensagem;
                     }
                 } catch (err) {
                     feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
-                    feedback.innerText = "Erro de conexão com o servidor.";
+                    feedback.innerText = "Código incorreto ou erro de conexão.";
+                }
+            });
+
+            // SUBMIT: CONFIRMAR EXCLUSÃO SELECIONADA (NOVO)
+            document.getElementById('btnConfirmarCancelamentoLote').addEventListener('click', async () => {
+                const checkboxes = document.querySelectorAll('.checkbox-alerta-cancelar:checked');
+                const idsParaCancelar = Array.from(checkboxes).map(cb => cb.value);
+
+                if (idsParaCancelar.length === 0) {
+                    alert("Por favor, selecione ao menos um monitoramento da lista para cancelar.");
+                    return;
+                }
+
+                feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
+                feedback.innerText = "Encerrando monitoramentos selecionados...";
+                feedback.classList.remove('hidden');
+
+                const emailVal = document.getElementById('emailCancelamento').value;
+                const codigoVal = document.getElementById('codigoSeguranca').value;
+
+                try {
+                    const response = await fetch('/api/cancelar/confirmar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            'email': emailVal,
+                            'codigo': codigoVal,
+                            'ids': idsParaCancelar.join(',') # Envia os IDs separados por vírgula
+                        })
+                    });
+                    const dados = await response.json();
+
+                    if (dados.status === "sucesso") {
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-950 text-red-400 border-red-900/50 text-center text-sm font-bold shadow-inner";
+                        feedback.innerText = `🔒 ${dados.mensagem}`;
+                        
+                        // Reseta a interface de consulta
+                        document.getElementById('formSolicitarCancelamento').reset();
+                        document.getElementById('formAutenticarConsulta').reset();
+                        document.getElementById('formAutenticarConsulta').classList.add('hidden');
+                        document.getElementById('wrapperListagemAlertas').classList.add('hidden');
+                        document.getElementById('btnConfirmarCancelamentoLote').classList.add('hidden');
+                    } else {
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                        feedback.innerText = dados.mensagem;
+                    }
+                } catch (err) {
+                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                    feedback.innerText = "Erro ao processar remoção.";
                 }
             });
         </script>
@@ -470,19 +534,15 @@ def obter_preco_ativo(ativo: str = None):
     nome_ativo = ticker.replace(".SA", "")
     tempo_atual = time.time()
 
-    # 1. Checagem de Cache (Retorno rápido da memória)
     if nome_ativo in CACHE_COTCOES:
         dados_cache = CACHE_COTCOES[nome_ativo]
         if tempo_atual - dados_cache["timestamp"] < CACHE_EXPIRACAO_SEGUNDOS:
-            print(f"⚡ [CACHE] Preço de {nome_ativo} retornado da memória: R$ {dados_cache['preco']}")
             return {
                 "status": "sucesso", 
                 "ativo": nome_ativo, 
-                "preco_atual": float(dados_cache["preco"]),
-                "preco": float(dados_cache["preco"])
+                "preco_atual": float(dados_cache["preco"])
             }
 
-    # 2. Consulta via HTTP direto na API leve do Yahoo
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
         headers = {
@@ -492,44 +552,28 @@ def obter_preco_ativo(ativo: str = None):
         
         preco_atual = None
         if resposta.status_code == 200:
-            dados = resposta.json()  # <--- CORRIGIDO: Linha limpa sem variáveis fantasmas!
+            dados = resposta.json()
             meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
             preco_atual = meta.get("regularMarketPrice")
 
-        # Fallback para yfinance tradicional caso a requisição leve falhe
         if preco_atual is None:
             dados_acao = yf.Ticker(ticker_yahoo)
             preco_atual = dados_acao.history(period="1d")["Close"].iloc[-1]
             
         preco_final = round(float(preco_atual), 2)
-
-        # Salva no cache da memória
         CACHE_COTCOES[nome_ativo] = {"preco": preco_final, "timestamp": tempo_atual}
-        print(f"🌍 [API YAHOO] Cotação de {nome_ativo} atualizada: R$ {preco_final}")
         
         return {
             "status": "sucesso",
             "ativo": nome_ativo,
-            "preco_atual": preco_final,
-            "preco": preco_final,
-            "price": preco_final,
-            "valor": preco_final
+            "preco_atual": preco_final
         }
         
     except Exception as e:
         print(f"💥 Erro na API de cotação para {ativo}: {e}")
-        
-        # Fallback de emergência caso tudo falhe e exista histórico no cache
         if nome_ativo in CACHE_COTCOES:
-            preco_antigo = CACHE_COTCOES[nome_ativo]["preco"]
-            return {
-                "status": "sucesso",
-                "ativo": nome_ativo,
-                "preco_atual": preco_antigo,
-                "preco": preco_antigo
-            }
-            
-        return {"status": "erro", "mensagem": "Cotação indisponível no momento."}
+            return {"status": "sucesso", "ativo": nome_ativo, "preco_atual": CACHE_COTCOES[nome_ativo]["preco"]}
+        return {"status": "erro", "mensagem": "Cotação indisponível."}
 
 @app.post("/api/alerta")
 @app.post("/api/alerta/")
@@ -583,7 +627,7 @@ def configurar_alerta(
 
     return {"status": "sucesso", "ativo": ticker, "preco_atual": float(preco_atual), "preco_alvo": float(preco_alvo), "condicao": condicao, "email": novo_alerta.email}
 
-# ROTA: SOLICITAR CÓDIGO DE CANCELAMENTO
+# ROTA: SOLICITAR TOKEN DE ACESSO
 @app.post("/api/cancelar/solicitar")
 def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
@@ -599,27 +643,60 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     db.add(novo_codigo)
     db.commit()
     
-    enviar_email_solicitacao_cancelamento(email_limpo, alertas_ativos, codigo_seguranca)
-    return {"status": "sucesso", "mensagem": "Código enviado! Verifique a sua caixa de entrada ou spam."}
+    enviar_email_token_consulta(email_limpo, codigo_seguranca)
+    return {"status": "sucesso", "mensagem": "Código de consulta enviado com sucesso para a sua caixa de entrada!"}
 
-# ROTA: CONFIRMAR CÓDIGO E ENCERRAR RADAR
-@app.post("/api/cancelar/confirmar")
-def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), db: Session = Depends(get_db)):
+# ROTA NOVA: AUTENTICAR E RETORNAR LISTA DE MONITORAMENTOS
+@app.post("/api/cancelar/listar")
+def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
     codigo_limpo = codigo.strip()
     
+    # Valida o token temporário
     registro_codigo = db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo, CodigoCancelamento.codigo == codigo_limpo).first()
     if not registro_codigo:
-        return {"status": "erro", "mensagem": "Código de segurança incorreto ou e-mail inválido."}
+        raise HTTPException(status_code=403, detail="Código inválido ou e-mail incorreto.")
         
-    alertas_desativados = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).update({"ativo_sistema": False})
+    # Extrai todos os robôs operantes daquele usuário
+    alertas = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
+    
+    # Monta uma lista estruturada em JSON
+    lista_alertas = [{"id": a.id, "ativo": a.ativo, "preco_alvo": a.preco_alvo, "condicao": a.condicao} for a in alertas]
+    
+    return {"status": "sucesso", "alertas": lista_alertas}
+
+# ROTA ATUALIZADA: CONFIRMAR CANCELAMENTO CIRÚRGICO (POR IDS SELECIONADOS)
+@app.post("/api/cancelar/confirmar")
+def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids: str = Form(...), db: Session = Depends(get_db)):
+    email_limpo = email.strip().lower()
+    codigo_limpo = codigo.strip()
+    
+    # Valida o token
+    registro_codigo = db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo, CodigoCancelamento.codigo == codigo_limpo).first()
+    if not registro_codigo:
+        return {"status": "erro", "mensagem": "Token de segurança inválido."}
+        
+    # Transforma a string de IDs ("1,4,7") em uma lista de inteiros Python ([1, 4, 7])
+    lista_ids = [int(x) for x in ids.split(",") if x.strip().isdigit()]
+    
+    if not lista_ids:
+        return {"status": "erro", "mensagem": "Nenhum monitoramento válido foi selecionado."}
+        
+    # Desativa EXCLUSIVAMENTE os IDs que o usuário marcou e que pertencem ao e-mail dele
+    alertas_desativados = db.query(Alerta).filter(
+        Alerta.id.in_(lista_ids),
+        Alerta.email == email_limpo,
+        Alerta.ativo_sistema == True
+    ).update({"ativo_sistema": False}, synchronize_session=False)
+    
+    # Apaga o token do banco
     db.delete(registro_codigo)
     db.commit()
     
-    return {"status": "sucesso", "mensagem": f"Todos os seus monitoramentos ativos ({alertas_desativados}) foram encerrados com sucesso!"}
+    return {"status": "sucesso", "mensagem": f"Sucesso! {alertas_desativados} monitoramento(s) selecionado(s) foi(ram) encerrado(s)."}
 
 # ==========================================
-# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO (BLINDADO)
+# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO
 # ==========================================
 
 def loop_monitoramento_b3():
@@ -638,9 +715,7 @@ def loop_monitoramento_b3():
                     try:
                         ticker_sa = f"{ativo}.SA"
                         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_sa}"
-                        headers = {
-                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                        }
+                        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
                         resposta = requests.get(url, headers=headers, timeout=10)
                         preco = None
                         if resposta.status_code == 200:
