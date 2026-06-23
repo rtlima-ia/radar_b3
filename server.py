@@ -115,7 +115,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
         f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!" # 🟢 Texto atualizado
     )
-    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento de {ativo} Ativado!", corpo)
+    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == "maior" else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
@@ -190,7 +190,7 @@ def pagina_inicial():
 
         <div class="max-w-xl w-full bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800">
             <div class="text-center mb-6">
-                <h1 class="text-3xl font-extrabold text-green-400">📡 B3 Alerta</h1> <p class="text-slate-400 mt-2 text-sm">Automação inteligente e sugestão de operação em tempo real.</p>
+                <h1 class="text-3xl font-extrabold text-green-400">📡 B3 Alerta</h1> <p class="text-slate-400 mt-2 text-sm">Automação inteligente de monitoramento em tempo real.</p>
             </div>
 
             <div class="flex border-b border-slate-800 mb-6">
@@ -204,7 +204,7 @@ def pagina_inicial():
 
             <form id="formB3" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, VALE3)</label>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, VALE3, MXRF11)</label>
                     <div class="relative">
                         <input type="text" id="ativo" placeholder="Digite e clique fora..." required
                             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500 uppercase">
@@ -234,7 +234,7 @@ def pagina_inicial():
                 </div>
 
                 <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
-                    Ativar Radar B3 🚀
+                    Ativar Monitoramento B3 🚀
                 </button>
             </form>
 
