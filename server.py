@@ -105,7 +105,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
         f"O Alerta B3 enviará uma mensagem assim que este objetivo for atingido!"
     )
-    enviar_email_via_resend(destino, f"📡 Alerta B3: Monitoramento de {ativo} Ativado!", corpo)
+    enviar_email_via_resend(destino, f"📡 Monitoramento de {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == "maior" else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
