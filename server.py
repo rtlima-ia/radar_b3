@@ -27,10 +27,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-# 🟢 Atualizado para o novo e-mail padrão do domínio b3alerta.com.br
+# 🟢 CORRIGIDO: Remetente oficial alterado para o novo domínio
 EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alerta@b3alerta.com.br")
 
-# 🟢 Atualizado o título da aplicação
+# 🟢 CORRIGIDO: Título oficial do app alterado para a nova marca
 app = FastAPI(title="B3 Alerta - Radar B3")
 
 app.add_middleware(
@@ -90,7 +90,7 @@ def enviar_email_via_resend(destino, assunto, corpo_texto):
         "Content-Type": "application/json"
     }
     payload = {
-        "from": f"B3 Alerta <{EMAIL_REMETENTE}>", # 🟢 Nome de exibição atualizado
+        "from": f"B3 Alerta <{EMAIL_REMETENTE}>", # 🟢 CORRIGIDO: Nome visual atualizado
         "to": [destino],
         "subject": assunto,
         "text": corpo_texto
@@ -115,7 +115,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
         f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!" # 🟢 Texto atualizado
     )
-    enviar_email_via_resend(destino, f"📡 Monitoramento {ativo} Ativado!", corpo)
+    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento de {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == "maior" else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
@@ -127,20 +127,20 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
         f"Preço Atual de Mercado: R$ {preco_atual:.2f}\n\n"
         f"Este monitoramento foi encerrado e removido do radar dinâmico."
     )
-    enviar_email_via_resend(destino, f"🔔 B3 Alerta: {ativo} atingiu R$ {preco_atual:.2f}!", corpo) # 🟢 Texto atualizado
+    enviar_email_via_resend(destino, f"🔔 B3 Alerta: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
 
 def enviar_email_token_consulta(destino, codigo):
     corpo = (
-        f"🔑 SEU CÓDIGO DE ACESSO — B3 Alerta\n\n" # 🟢 Texto atualizado
+        f"🔑 SEU CÓDIGO DE ACESSO — B3 ALERTA\n\n"
         f"Você solicitou a consulta dos seus monitoramentos ativos.\n\n"
         f"Utilize o código de segurança abaixo no site para carregar a sua lista de robôs em tempo real:\n"
         f"👉 {codigo} 👈\n\n"
         f"Após inserir este código, você poderá selecionar individualmente quais alertas deseja manter ou desativar.\n"
         f"Se você não solicitou este acesso, apenas ignore este e-mail."
     )
-    enviar_email_via_resend(destino, "🔒 Código de Acesso - B3 Alerta", corpo) # 🟢 Texto atualizado
+    enviar_email_via_resend(destino, "🔒 Código de Acesso - B3 Alerta", corpo)
 
-# Função auxiliar interna para buscar preço com segurança de cache
+# Função auxiliar unificada para puxar preço protegendo o servidor de rate limit
 def obter_preco_interno(ativo_nome: str) -> float:
     nome_ativo = ativo_nome.strip().upper()
     ticker_yahoo = f"{nome_ativo}.SA" if not nome_ativo.endswith(".SA") else nome_ativo
@@ -154,7 +154,9 @@ def obter_preco_interno(ativo_nome: str) -> float:
 
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
-        headers = {"User-Agent": "Mozilla/5.0"}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
         resposta = requests.get(url, headers=headers, timeout=5)
         preco_atual = None
         if resposta.status_code == 200:
@@ -182,15 +184,13 @@ def pagina_inicial():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>B3 Alerta - Radar Inteligente</title> <!-- 🟢 Título HTML atualizado -->
-        <script src="https://cdn.tailwindcss.com"></script>
+        <title>B3 Alerta - Radar Inteligente</title> <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center font-sans p-4">
 
         <div class="max-w-xl w-full bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800">
             <div class="text-center mb-6">
-                <h1 class="text-3xl font-extrabold text-green-400">📡 B3 Alerta</h1> <!-- 🟢 Título principal atualizado -->
-                <p class="text-slate-400 mt-2 text-sm">Automação inteligente de monitoramento em tempo real.</p>
+                <h1 class="text-3xl font-extrabold text-green-400">📡 B3 Alerta</h1> <p class="text-slate-400 mt-2 text-sm">Automação inteligente e sugestão de operação em tempo real.</p>
             </div>
 
             <div class="flex border-b border-slate-800 mb-6">
@@ -204,7 +204,7 @@ def pagina_inicial():
 
             <form id="formB3" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, XINA11, MXRF11)</label>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, VALE3)</label>
                     <div class="relative">
                         <input type="text" id="ativo" placeholder="Digite e clique fora..." required
                             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500 uppercase">
@@ -596,7 +596,7 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
     
     if not alertas_ativos:
-        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
+        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento active para este e-mail."}
         
     codigo_seguranca = str(random.randint(100000, 999999))
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
