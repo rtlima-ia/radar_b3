@@ -302,11 +302,24 @@ def configurar_alerta(
         ticker_yahoo = ticker
         ticker = ticker.replace(".SA", "")
 
+    # Busca o preço atual com tratamento de erro robusto
     try:
         dados_acao = yf.Ticker(ticker_yahoo)
-        preco_atual = dados_acao.history(period="1d")["Close"].iloc[-1]
-    except Exception:
-        raise HTTPException(status_code=400, detail=f"Não foi possível encontrar a cotação para o ativo {ticker}.")
+        # Tenta primeiro pelo método Info (Tempo Real)
+        preco_atual = dados_acao.info.get("regularMarketPrice")
+        
+        # Se o Info falhar ou vier vazio, tenta pelo histórico do dia
+        if not preco_atual:
+            historico = dados_acao.history(period="1d")
+            if not historico.empty:
+                preco_atual = historico["Close"].iloc[-1]
+            else:
+                # Última tentativa: busca os últimos 5 dias caso o mercado esteja fechado há muito tempo
+                preco_atual = dados_acao.history(period="5d")["Close"].iloc[-1]
+                
+    except Exception as e:
+        print(f"Erro ao buscar cotação de {ticker}: {e}")
+        raise HTTPException(status_code=400, detail=f"Não foi possível encontrar a cotação para o ativo {ticker}. Verifique se o código está correto.")
 
     novo_alerta = Alerta(
         email=email.strip().lower(),
@@ -322,8 +335,9 @@ def configurar_alerta(
 
     return RedirectResponse(url="/", status_code=303)
 
+
 # ==========================================
-# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO
+# 5. LOOP DE MONITORAMENTO EM SEGUNDO PLANO (CORRIGIDO)
 # ==========================================
 
 def loop_monitoramento_b3():
@@ -334,7 +348,7 @@ def loop_monitoramento_b3():
             alertas_ativos = db.query(Alerta).filter(Alerta.ativo_sistema == True).all()
 
             if alertas_ativos:
-                print(f"📊 [{datetime.now().strftime('%H:%M:%S')}] Verificando {len(alertas_ativos)} monitoramentos no radar...")
+                print(f"📊 Verificando {len(alertas_ativos)} monitoramentos no radar...")
                 
                 ativos_unicos = list(set([a.ativo for a in alertas_ativos]))
                 cotacoes = {}
@@ -343,10 +357,16 @@ def loop_monitoramento_b3():
                     try:
                         ticker_sa = f"{ativo}.SA"
                         dados = yf.Ticker(ticker_sa)
-                        preco_atual = dados.history(period="1d")["Close"].iloc[-1]
-                        cotacoes[ativo] = preco_atual
+                        
+                        # Mesma lógica segura de captura de preço para o robô
+                        preco = dados.info.get("regularMarketPrice")
+                        if not preco:
+                            hist = dados.history(period="1d")
+                            preco = hist["Close"].iloc[-1] if not hist.empty else dados.history(period="5d")["Close"].iloc[-1]
+                        
+                        cotacoes[ativo] = preco
                     except Exception as e:
-                        print(f"⚠️ Erro ao buscar cotação de {ativo}: {e}")
+                        print(f"⚠️ Erro ao buscar cotação de {ativo} no loop: {e}")
 
                 for alerta in alertas_ativos:
                     preco_atual = cotacoes.get(alerta.ativo)
@@ -372,6 +392,6 @@ def loop_monitoramento_b3():
             db.close()
 
         time.sleep(300)
-
+        
 thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
 thread_robo.start()
