@@ -288,37 +288,84 @@ def pagina_inicial():
     """
     return HTMLResponse(content=html_content)
 
+# Dicionário global para guardar os preços na memória do servidor e evitar bloqueios
+CACHE_COTCOES = {}
+CACHE_EXPIRACAO_SEGUNDOS = 60  # Guarda o preço por 1 minuto antes de consultar a internet de novo
+
 @app.get("/api/preco/{ativo}")
 def obter_preco_ativo(ativo: str):
     """
-    Rota que atende à busca em tempo real feita pelo Javascript do seu index.html!
+    Rota de API ultra-resistente a bloqueios. Usa cache interno e faz 
+    requisição HTTP direta à API de sumário do Yahoo Finance para evitar Rate Limits.
     """
     ticker = ativo.strip().upper()
     if not ticker.endswith(".SA"):
         ticker_yahoo = f"{ticker}.SA"
     else:
         ticker_yahoo = ticker
+        
+    nome_ativo = ticker.replace(".SA", "")
+    tempo_atual = time.time()
 
+    # 1. Verifica se já temos o preço desse ativo no cache e se ele ainda é recente
+    if nome_ativo in CACHE_COTCOES:
+        dados_cache = CACHE_COTCOES[nome_ativo]
+        if tempo_atual - dados_cache["timestamp"] < CACHE_EXPIRACAO_SEGUNDOS:
+            print(f"⚡ [CACHE] Preço de {nome_ativo} retornado da memória interna.")
+            return {"ativo": nome_ativo, "preco": dados_cache["preco"]}
+
+    # 2. Se não estiver no cache ou expirou, faz consulta direta via HTTP (MUITO mais leve que a biblioteca yf)
     try:
-        dados_acao = yf.Ticker(ticker_yahoo)
+        # URL da API interna e pública do Yahoo Finance para cotações em tempo real
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
         
-        # 1ª tentativa: Tempo real via Info
-        preco_atual = dados_acao.info.get("regularMarketPrice")
+        # Fingimos ser um navegador real para o Yahoo não bloquear a requisição
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
         
-        # 2ª tentativa: Histórico diário recente (caso pregão fechado)
-        if not preco_atual:
-            historico = dados_acao.history(period="1d")
-            if not historico.empty:
-                preco_atual = historico["Close"].iloc[-1]
-            else:
-                # 3ª tentativa: Margem de segurança de 5 dias
-                preco_atual = dados_acao.history(period="5d")["Close"].iloc[-1]
+        resposta = requests.get(url, headers=headers, timeout=10)
+        
+        if resposta.status_code == 200:
+            dados = resposta.json()
+            # Extrai o preço de fechamento/atual de dentro do JSON retornado pelo Yahoo
+            meta = dados.get("chart", {}).get("result", [{}])[0].get("meta", {})
+            preco_atual = meta.get("regularMarketPrice")
+            
+            if preco_atual is not None:
+                preco_final = round(float(preco_atual), 2)
                 
-        return {"ativo": ticker.replace(".SA", ""), "preco": round(preco_atual, 2)}
+                # Salva o resultado no Cache interno do servidor
+                CACHE_COTCOES[nome_ativo] = {
+                    "preco": preco_final,
+                    "timestamp": tempo_atual
+                }
+                print(f"🌍 [API YAHOO] Cotação de {nome_ativo} atualizada com sucesso via HTTP Direto: R$ {preco_final}")
+                return {"ativo": nome_ativo, "preco": preco_final}
+
+        # Se a API direta falhar, tenta usar a biblioteca yfinance tradicional como última alternativa
+        print("⚠️ API Direta falhou ou retornou vazio. Tentando fallback via biblioteca yfinance...")
+        dados_acao = yf.Ticker(ticker_yahoo)
+        preco_atual = dados_acao.history(period="1d")["Close"].iloc[-1]
+        
+        preco_final = round(float(preco_atual), 2)
+        CACHE_COTCOES[nome_ativo] = {"preco": preco_final, "timestamp": tempo_atual}
+        return {"ativo": nome_ativo, "preco": preco_final}
         
     except Exception as e:
-        print(f"Erro na rota API de cotação para {ativo}: {e}")
-        raise HTTPException(status_code=404, detail="Ativo não encontrado ou erro na busca")
+        print(f"💥 Erro total na rota de cotação para {ativo}: {e}")
+        
+        # 3. SISTEMA DE SEGURANÇA MÁXIMA: Se o Yahoo bloquear TOTALMENTE, mas nós tivermos
+        # qualquer preço histórico guardado em cache (mesmo antigo), entregamos ele!
+        # Isso impede que o seu site dê erro 404 na tela do cliente.
+        if nome_ativo in CACHE_COTCOES:
+            print(f"🛟 [EMERGÊNCIA] Servidores externos fora do ar. Entregando último preço conhecido para {nome_ativo}")
+            return {"ativo": nome_ativo, "preco": CACHE_COTCOES[nome_ativo]["preco"]}
+            
+        raise HTTPException(
+            status_code=404, 
+            detail="Serviço de cotações temporariamente indisponível. Tente novamente em alguns minutos."
+        )
 
 @app.post("/configurar-alerta")
 def configurar_alerta(
