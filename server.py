@@ -120,7 +120,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
         f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!"
     )
-    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento {ativo} Ativado!", corpo)
+    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento de {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == "maior" else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
@@ -182,7 +182,8 @@ def obter_preco_interno(ativo_nome: str) -> float:
 
 @app.get("/ads.txt", response_class=PlainTextResponse)
 def obter_ads_txt():
-    return "google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0"
+    # 🟢 ATUALIZADO: Código oficial do seu AdSense configurado corretamente
+    return "google.com, pub-9200830725654504, DIRECT, f08c47fec0942fa0"
 
 @app.get("/", response_class=HTMLResponse)
 def pagina_inicial():
@@ -194,7 +195,9 @@ def pagina_inicial():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>B3 Alerta - Radar Inteligente</title>
         <script src="https://cdn.tailwindcss.com"></script>
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0000000000000000" crossorigin="anonymous"></script>
+        
+        <!-- 🟢 ATUALIZADO: Script do AdSense contendo o seu ID de Editor oficial -->
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
     <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between font-sans p-4">
 
@@ -284,8 +287,14 @@ def pagina_inicial():
 
                 <div id="feedback" class="mt-6 hidden p-5 rounded-xl border"></div>
 
+                <!-- 🟢 ATUALIZADO: Bloco de anúncio interno configurado com o seu ID de Editor oficial -->
                 <div class="mt-6 pt-4 border-t border-slate-800/60 flex justify-center">
-                    <ins class="adsbygoogle" style="display:block; min-width:300px; max-width:100%;" data-ad-client="ca-pub-0000000000000000" data-ad-slot="0000000000" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                    <ins class="adsbygoogle"
+                         style="display:block; min-width:300px; max-width:100%;"
+                         data-ad-client="ca-pub-9200830725654504"
+                         data-ad-slot="0000000000"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
                     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                 </div>
             </div>
@@ -447,11 +456,15 @@ def pagina_inicial():
                         const listaDiv = document.getElementById('listaAlertasDinamica');
                         listaDiv.innerHTML = "";
                         dados.alertas.forEach(alerta => {
+                            const precoAtualTexto = alerta.preco_atual > 0 ? `R$ ${alerta.preco_atual.toFixed(2)}` : "Carregando...";
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-700 cursor-pointer transition">
                                     <div class="flex items-center gap-3">
                                         <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-green-500 checkbox-alerta-cancelar">
-                                        <span class="font-bold text-white uppercase">${alerta.ativo}</span>
+                                        <div class="flex flex-col">
+                                            <span class="font-bold text-white uppercase">${alerta.ativo}</span>
+                                            <span class="text-[10px] text-slate-500">Mercado: <b class="text-green-400">${precoAtualTexto}</b></span>
+                                        </div>
                                     </div>
                                     <span class="text-xs font-semibold text-slate-400">Alvo: R$ ${alerta.preco_alvo.toFixed(2)}</span>
                                 </label>
@@ -487,7 +500,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-green-950 text-green-400 text-center text-sm font-bold";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-green-500/20 text-green-400 border-green-500/30 text-center text-sm font-bold shadow-inner";
                         feedback.innerText = `🔒 ${dados.mensagem}`;
                         document.getElementById('formSolicitarCancelamento').reset();
                         document.getElementById('formAutenticarConsulta').reset();
@@ -565,7 +578,6 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     codigo_seguranca = str(random.randint(100000, 999999))
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
     
-    # 🟢 CORRIGIDO: Nome do argumento alterado de 'code' para 'codigo' para bater com o modelo do banco
     novo_codigo = CodigoCancelamento(email=email_limpo, codigo=codigo_seguranca)
     db.add(novo_codigo)
     db.commit()
@@ -583,7 +595,26 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
         raise HTTPException(status_code=403, detail="Código inválido ou e-mail incorreto.")
         
     alertas = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
-    return {"status": "sucesso", "alertas": [{"id": a.id, "ativo": a.ativo, "preco_alvo": a.preco_alvo} for a in alertas]}
+    
+    ativos_usuario = list(set([a.ativo for a in alertas]))
+    cotacoes_usuario = {}
+    
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        resultados = executor.map(obter_preco_interno, ativos_usuario)
+        for ativo, preco in zip(ativos_usuario, resultados):
+            if preco > 0:
+                cotacoes_usuario[ativo] = preco
+
+    retorno_alertas = []
+    for a in alertas:
+        retorno_alertas.append({
+            "id": a.id, 
+            "ativo": a.ativo, 
+            "preco_alvo": a.preco_alvo,
+            "preco_atual": cotacoes_usuario.get(a.ativo, 0.0)
+        })
+        
+    return {"status": "sucesso", "alertas": retorno_alertas}
 
 @app.post("/api/cancelar/confirmar")
 def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids: str = Form(...), db: Session = Depends(get_db)):
