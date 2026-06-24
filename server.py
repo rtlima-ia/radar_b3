@@ -178,7 +178,7 @@ def obter_preco_interno(ativo_nome: str) -> float:
 @app.get("/ads.txt", response_class=PlainTextResponse)
 def obter_ads_txt():
     # TODO: Substitua o trecho 'pub-0000000000000000' pelo seu ID de Editor oficial do AdSense ao ser aprovado
-    conteudo_ads = "google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0"
+    conteudo_ads = "google.com, pub-9200830725654504, DIRECT, f08c47fec0942fa0"
     return conteudo_ads
 
 @app.get("/", response_class=HTMLResponse)
@@ -192,7 +192,7 @@ def pagina_inicial():
         <title>B3 Alerta - Radar Inteligente</title>
         <script src="https://cdn.tailwindcss.com"></script>
         
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0000000000000000" crossorigin="anonymous"></script>
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
     <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between font-sans p-4">
 
@@ -285,7 +285,7 @@ def pagina_inicial():
                 <div class="mt-6 pt-4 border-t border-slate-800/60 flex justify-center">
                     <ins class="adsbygoogle"
                          style="display:block; min-width:300px; max-width:100%;"
-                         data-ad-client="ca-pub-0000000000000000"
+                         data-ad-client="ca-pub-9200830725654504"
                          data-ad-slot="0000000000"
                          data-ad-format="auto"
                          data-full-width-responsive="true"></ins>
