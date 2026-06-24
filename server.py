@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from typing import List
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 import requests
 from fastapi import FastAPI, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
@@ -24,17 +25,33 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./radar_b3.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(
-    DATABASE_URL, 
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-)
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 EMAIL_REMETENTE = "alerta@b3alerta.com.br"
 
-app = FastAPI(title="B3 Alerta - Radar Profissional")
+# ==========================================
+# EVENTOS DE INICIALIZAÇÃO ASSÍNCRONA (LIFESPAN)
+# ==========================================
+@asynccontextmanager
+async def lifespan(app_fastapi: FastAPI):
+    # 1. Cria as tabelas em segundo plano sem travar a inicialização do app
+    Base.metadata.create_all(bind=engine)
+    
+    # 2. Inicia a Thread do Robô de Monitoramento de forma isolada
+    thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
+    thread_robo.start()
+    
+    yield
+
+# Inicializa o app acoplando o ciclo de vida seguro para nuvem
+app = FastAPI(title="B3 Alerta - Radar Profissional", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -70,8 +87,6 @@ class CodigoCancelamento(Base):
     email = Column(String, index=True, nullable=False)
     codigo = Column(String, nullable=False)
     criado_em = Column(DateTime, default=datetime.utcnow)
-
-Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
@@ -120,7 +135,6 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
         f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!"
     )
-    # 🟢 ATUALIZADO: Assunto do e-mail alterado para remover a preposição "de"
     enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
@@ -203,7 +217,6 @@ def pagina_inicial():
             <div class="max-w-xl w-full bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 my-8">
                 <div class="text-center mb-6">
                     <h1 class="text-3xl font-extrabold text-green-400">📡 B3 Alerta</h1>
-                    <!-- 🟢 ATUALIZADO: Subtítulo simplificado conforme solicitado -->
                     <p class="text-slate-400 mt-2 text-sm">Monitoramento em tempo real.</p>
                 </div>
 
@@ -278,7 +291,6 @@ def pagina_inicial():
                     <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-slate-800 pt-4">
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
                         <div id="listaAlertasDinamica" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-                        <!-- 🟢 ATUALIZADO: Label do botão alterada para incluir o ícone de cadeado solicitado -->
                         <button id="btnConfirmarCancelamentoLote" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg hidden">
                             Cancelar 🔒
                         </button>
@@ -338,7 +350,7 @@ def pagina_inicial():
                 executarSugestaoCondicao();
             });
 
-            function executarSugestaoCondicao() {
+            function ejecutarSugestaoCondicao() {
                 if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
                 selectCondicao.value = precoLimpoParaEnvio > valorCotacaoAtual ? "maior" : "menor";
             }
@@ -482,7 +494,7 @@ def pagina_inicial():
             document.getElementById('btnConfirmarCancelamentoLote').addEventListener('click', async () => {
                 const checkboxes = document.querySelectorAll('.checkbox-alerta-cancelar:checked');
                 const idsParaCancelar = Array.from(checkboxes).map(cb => cb.value);
-                if (idsParaCancelar.length === 0) { alert("Selecione ao menos um item."); return; }
+                if (idsParaCancelar.length === 0) { alert("Selecione au menos um item."); return; }
 
                 try {
                     const response = await fetch('/api/cancelar/confirmar', {
@@ -540,7 +552,7 @@ def obter_preco_ativo(ativo: str = None):
     return {"status": "erro", "mensagem": "Cotação indisponível."}
 
 @app.post("/api/alerta")
-def configurar_alerta(
+def configuring_alerta(
     email: str = Form(...),
     ativo: str = Form(...),
     preco_alvo: float = Form(...),
@@ -638,8 +650,6 @@ def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids:
     return {"status": "sucesso", "mensagem": f"Sucesso! {alertas_desativados} monitoramento(s) encerrado(s)."}
 
 def loop_monitoramento_b3():
-    # 🟢 ADICIONADO: Dá 15 segundos para o Uvicorn abrir a porta no Render antes do robô puxar os dados
-    time.sleep(15)
     print("🤖 Robô de monitoramento de ativos B3 iniciado com foco em alta performance!")
     while True:
         db = SessionLocal()
@@ -680,6 +690,3 @@ def loop_monitoramento_b3():
         finally:
             db.close()
         time.sleep(300)
-
-thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
-thread_robo.start()
