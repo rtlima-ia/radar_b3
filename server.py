@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import List
 import requests
 from fastapi import FastAPI, Form, Depends, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -30,7 +30,6 @@ RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 # Força o uso do domínio novo independente das variáveis antigas do Render
 EMAIL_REMETENTE = "alerta@b3alerta.com.br"
 
-# 🟢 CORRIGIDO: Título oficial do app alterado para a nova marca
 app = FastAPI(title="B3 Alerta - Radar B3")
 
 app.add_middleware(
@@ -90,7 +89,7 @@ def enviar_email_via_resend(destino, assunto, corpo_texto):
         "Content-Type": "application/json"
     }
     payload = {
-        "from": f"B3 Alerta <{EMAIL_REMETENTE}>", # 🟢 CORRIGIDO: Nome visual atualizado
+        "from": f"B3 Alerta <{EMAIL_REMETENTE}>",
         "to": [destino],
         "subject": assunto,
         "text": corpo_texto
@@ -113,7 +112,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"📊 Cotação Atual de Mercado: R$ {preco_atual:.2f}\n"
         f"🎯 Seu Preço Alvo: R$ {preco_alvo:.2f}\n"
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
-        f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!" # 🟢 Texto atualizado
+        f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!"
     )
     enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento {ativo} Ativado!", corpo)
 
@@ -140,7 +139,6 @@ def enviar_email_token_consulta(destino, codigo):
     )
     enviar_email_via_resend(destino, "🔒 Código de Acesso - B3 Alerta", corpo)
 
-# Função auxiliar unificada para puxar preço protegendo o servidor de rate limit
 def obter_preco_interno(ativo_nome: str) -> float:
     nome_ativo = ativo_nome.strip().upper()
     ticker_yahoo = f"{nome_ativo}.SA" if not nome_ativo.endswith(".SA") else nome_ativo
@@ -176,6 +174,13 @@ def obter_preco_interno(ativo_nome: str) -> float:
 # 4. ROTAS DO FASTAPI (INTERFACE E APIS)
 # ==========================================
 
+# 🟢 MONETIZAÇÃO OBRIGATÓRIA: Rota para o arquivo ads.txt exigido pelo Google AdSense
+@app.get("/ads.txt", response_class=PlainTextResponse)
+def obter_ads_txt():
+    # TODO: Substitua o trecho 'pub-0000000000000000' pelo seu ID de Editor oficial do AdSense ao ser aprovado
+    conteudo_ads = "google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0"
+    return conteudo_ads
+
 @app.get("/", response_class=HTMLResponse)
 def pagina_inicial():
     html_content = """
@@ -184,95 +189,119 @@ def pagina_inicial():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>B3 Alerta - Radar Inteligente</title> <script src="https://cdn.tailwindcss.com"></script>
+        <title>B3 Alerta - Radar Inteligente</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0000000000000000" crossorigin="anonymous"></script>
     </head>
-    <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center font-sans p-4">
+    <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between font-sans p-4">
 
-        <div class="max-w-xl w-full bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800">
-            <div class="text-center mb-6">
-                <h1 class="text-3xl font-extrabold text-green-400">📡 B3 Alerta</h1> <p class="text-slate-400 mt-2 text-sm">Automação inteligente de monitoramento em tempo real.</p>
-            </div>
-
-            <div class="flex border-b border-slate-800 mb-6">
-                <button id="tabCadastro" class="flex-1 pb-3 text-sm font-bold text-green-400 border-b-2 border-green-400 focus:outline-none">
-                    📝 Criar Alerta
-                </button>
-                <button id="tabCancelamento" class="flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300">
-                    🔍 Consultar & Cancelar
-                </button>
-            </div>
-
-            <form id="formB3" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
-                    <div class="relative">
-                        <input type="text" id="ativo" placeholder="Digite e clique fora..." required
-                            class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500 uppercase">
-                        <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-bold text-green-400 hidden"></span>
-                    </div>
+        <div class="flex-grow flex items-center justify-center w-full">
+            <div class="max-w-xl w-full bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 my-8">
+                <div class="text-center mb-6">
+                    <h1 class="text-3xl font-extrabold text-green-400">📡 B3 Alerta</h1>
+                    <p class="text-slate-400 mt-2 text-sm">Automação inteligente de monitoramento em tempo real.</p>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Seu E-mail para Alerta</label>
-                    <input type="email" id="email" placeholder="seuemail@exemplo.com" required
-                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
+                <div class="flex border-b border-slate-800 mb-6">
+                    <button id="tabCadastro" class="flex-1 pb-3 text-sm font-bold text-green-400 border-b-2 border-green-400 focus:outline-none">
+                        📝 Criar Alerta
+                    </button>
+                    <button id="tabCancelamento" class="flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300">
+                        🔍 Consultar & Cancelar
+                    </button>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <form id="formB3" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
-                        <input type="text" id="preco" placeholder="R$ 0,00" required
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
+                        <div class="relative">
+                            <input type="text" id="ativo" placeholder="Digite e clique fora..." required
+                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500 uppercase">
+                            <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-bold text-green-400 hidden"></span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Seu E-mail para Alerta</label>
+                        <input type="email" id="email" placeholder="seuemail@exemplo.com" required
                             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Me avise quando for:</label>
-                        <select id="condicao" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
-                            <option value="maior">📈 Maior ou Igual</option>
-                            <option value="menor">📉 Menor ou Igual</option>
-                        </select>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
+                            <input type="text" id="preco" placeholder="R$ 0,00" required
+                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Me avise quando for:</label>
+                            <select id="condicao" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
+                                <option value="maior">📈 Maior ou Igual</option>
+                                <option value="menor">📉 Menor ou Igual</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                        Ativar Monitoramento 🚀
+                    </button>
+                </form>
+
+                <div id="containerCancelamento" class="space-y-4 hidden">
+                    <form id="formSolicitarCancelamento" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Seu E-mail Cadastrado</label>
+                            <input type="email" id="emailCancelamento" placeholder="seuemail@exemplo.com" required
+                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 font-bold py-3 px-4 rounded-lg border border-blue-500/30 transition duration-200">
+                            Solicitar Código de Consulta 🔑
+                        </button>
+                    </form>
+
+                    <form id="formAutenticarConsulta" class="space-y-4 hidden border-t border-slate-800 pt-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Insira o Código de 6 Dígitos</label>
+                            <input type="text" id="codigoSeguranca" placeholder="Ex: 123456" maxlength="6" required
+                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-green-500">
+                        </div>
+                        <button type="submit" class="w-full bg-green-500 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                            Buscar Meus Monitoramentos 🔍
+                        </button>
+                    </form>
+
+                    <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-slate-800 pt-4">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
+                        <div id="listaAlertasDinamica" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+                        <button id="btnConfirmarCancelamentoLote" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg hidden">
+                            Cancelar Itens Selecionados 🔒
+                        </button>
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
-                    Ativar Monitoramento 🚀
-                </button>
-            </form>
+                <div id="feedback" class="mt-6 hidden p-5 rounded-xl border"></div>
 
-            <div id="containerCancelamento" class="space-y-4 hidden">
-                <form id="formSolicitarCancelamento" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Seu E-mail Cadastrado</label>
-                        <input type="email" id="emailCancelamento" placeholder="seuemail@exemplo.com" required
-                            class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
-                    </div>
-                    <button type="submit" class="w-full bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 font-bold py-3 px-4 rounded-lg border border-blue-500/30 transition duration-200">
-                        Solicitar Código de Consulta 🔑
-                    </button>
-                </form>
-
-                <form id="formAutenticarConsulta" class="space-y-4 hidden border-t border-slate-800 pt-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Insira o Código de 6 Dígitos</label>
-                        <input type="text" id="codigoSeguranca" placeholder="Ex: 123456" maxlength="6" required
-                            class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-green-500">
-                    </div>
-                    <button type="submit" class="w-full bg-green-500 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
-                        Buscar Meus Monitoramentos 🔍
-                    </button>
-                </form>
-
-                <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-slate-800 pt-4">
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
-                    <div id="listaAlertasDinamica" class="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        </div>
-                    <button id="btnConfirmarCancelamentoLote" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg hidden">
-                        Cancelar Itens Selecionados 🔒
-                    </button>
+                <div class="mt-6 pt-4 border-t border-slate-800/60 flex justify-center">
+                    <ins class="adsbygoogle"
+                         style="display:block; min-width:300px; max-width:100%;"
+                         data-ad-client="ca-pub-0000000000000000"
+                         data-ad-slot="0000000000"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                    <script>
+                         (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
                 </div>
             </div>
-
-            <div id="feedback" class="mt-6 hidden p-5 rounded-xl border"></div>
         </div>
+
+        <footer class="w-full text-center py-4 border-t border-slate-900 bg-slate-950/60 text-xs text-slate-500">
+            <p>&copy; 2026 B3 Alerta. Todos os direitos reservados. O site não realiza recomendações de compra ou venda.</p>
+            <p class="mt-1">
+                <a href="/politica-de-privacidade" target="_blank" class="hover:text-green-400 underline transition duration-150">Política de Privacidade</a>
+            </p>
+        </footer>
 
         <script>
             const tabCadastro = document.getElementById('tabCadastro');
@@ -551,6 +580,42 @@ def pagina_inicial():
     </html>
     """
     return HTMLResponse(content=html_content)
+
+# 🟢 MONETIZAÇÃO OBRIGATÓRIA: Página de Política de Privacidade exigida pelo Google AdSense
+@app.get("/politica-de-privacidade", response_class=HTMLResponse)
+def pagina_politica_privacidade():
+    html_politica = """
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <title>Política de Privacidade - B3 Alerta</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-slate-950 text-slate-300 font-sans p-6 min-h-screen flex items-center justify-center">
+        <div class="max-w-2xl w-full bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-2xl space-y-4">
+            <h1 class="text-2xl font-bold text-green-400">🔒 Política de Privacidade</h1>
+            <p class="text-sm text-slate-400">Última atualização: Junho de 2026</p>
+            <hr class="border-slate-800">
+            <p>A sua privacidade é de extrema importância para nós no <b>B3 Alerta</b>. Esta política detalha como coletamos e resguardamos as suas informações:</p>
+            
+            <h2 class="text-lg font-bold text-white mt-4">1. Coleta de Informações</h2>
+            <p>Coletamos exclusivamente o seu endereço de e-mail e os parâmetros dos ativos informados de forma voluntária no formulário da página inicial para que possamos enviar os alertas automáticos configurados.</p>
+            
+            <h2 class="text-lg font-bold text-white mt-4">2. Uso e Compartilhamento de Dados</h2>
+            <p>Seus dados nunca serão vendidos ou compartilhados com terceiros. Eles são processados internamente apenas para disparar e-mails de validação de preços e códigos de consulta via API segura.</p>
+            
+            <h2 class="text-lg font-bold text-white mt-4">3. Cookies e Anúncios do Google</h2>
+            <p>Este site utiliza o Google AdSense para exibir anúncios. O Google pode utilizar cookies (como o cookie DART) para veicular anúncios baseados nas suas visitas a este e a outros sites na internet. Você pode desativar o uso desse cookie visitando a Política de Privacidade da rede de conteúdo e anúncios do Google.</p>
+            
+            <div class="pt-4 flex justify-end">
+                <button onclick="window.close()" class="bg-green-500 hover:bg-green-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm transition">Fechar Página</button>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_politica)
 
 @app.get("/api/preco/{ativo}")
 @app.get("/api/preco")
