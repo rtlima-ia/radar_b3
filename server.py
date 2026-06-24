@@ -638,6 +638,8 @@ def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids:
     return {"status": "sucesso", "mensagem": f"Sucesso! {alertas_desativados} monitoramento(s) encerrado(s)."}
 
 def loop_monitoramento_b3():
+    # 🟢 ADICIONADO: Dá 15 segundos para o Uvicorn abrir a porta no Render antes do robô puxar os dados
+    time.sleep(15)
     print("🤖 Robô de monitoramento de ativos B3 iniciado com foco em alta performance!")
     while True:
         db = SessionLocal()
