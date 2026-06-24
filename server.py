@@ -331,7 +331,7 @@ def pagina_inicial():
             });
 
             inputPreco.addEventListener('input', (e) => {
-                let value = e.target.value.replace(/\D/g, "");
+                let value = e.target.value.replace(/\\D/g, "");
                 if (value === "") { precoLimpoParaEnvio = 0; e.target.value = ""; return; }
                 precoLimpoParaEnvio = parseFloat(value) / 100;
                 e.target.value = precoLimpoParaEnvio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
