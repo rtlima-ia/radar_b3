@@ -204,7 +204,7 @@ def pagina_inicial():
 
             <form id="formB3" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, VALE3, MXRF11)</label>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
                     <div class="relative">
                         <input type="text" id="ativo" placeholder="Digite e clique fora..." required
                             class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500 uppercase">
@@ -234,7 +234,7 @@ def pagina_inicial():
                 </div>
 
                 <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
-                    Ativar Monitoramento B3 🚀
+                    Ativar Monitoramento 🚀
                 </button>
             </form>
 
