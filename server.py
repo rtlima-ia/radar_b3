@@ -148,7 +148,7 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
 def enviar_email_token_consulta(destino, codigo):
     corpo = (
         f"🔑 SEU CÓDIGO DE ACESSO — B3 ALERTA\n\n"
-        f"Você solicitou a consulta dos seus monitoramentos activos.\n\n"
+        f"Você solicitou a consulta dos seus monitoramentos ativos.\n\n"
         f"Utilize o código de segurança abaixo no site para carregar a sua lista de robôs em tempo real:\n"
         f"👉 {codigo} 👈\n\n"
         f"Após inserir este código, você poderá selecionar individualmente quais alertas deseja manter ou desativar.\n"
@@ -178,7 +178,6 @@ def obter_preco_interno(ativo_nome: str) -> float:
             preco_atual = resposta.json().get("chart", {}).get("result", [{}])[0].get("meta", {}).get("regularMarketPrice")
         
         if preco_atual is None:
-            # 🟢 MELHORIA DE ALTA PERFORMANCE: Evita quebras se o yfinance falhar em produção
             ticker_obj = yf.Ticker(ticker_yahoo)
             hist = ticker_obj.history(period="1d")
             if not hist.empty:
@@ -368,7 +367,6 @@ def pagina_inicial():
                 precoTempoReal.innerText = "Buscando...";
                 precoTempoReal.classList.remove('hidden');
                 try {
-                    // 🟢 CORREÇÃO: Usa URL absoluta dinâmica baseada na localização atual da janela para evitar Mixed Content
                     const baseApiUrl = window.location.origin;
                     const response = await fetch(`${baseApiUrl}/api/preco/${ativoVal}`);
                     const dados = await response.json();
@@ -476,13 +474,14 @@ def pagina_inicial():
                             const precoAtualTexto = alerta.preco_atual > 0 ? `R$ ${alerta.preco_atual.toFixed(2)}` : "Carregando...";
                             const simboloCondicao = alerta.condicao === "maior" ? "📈 ≥" : "📉 ≤";
                             
+                            // 🟢 ATUALIZAÇÃO DA ETIQUETA SOLICITADA: Alterado de 'Mercado:' para 'Cotação Atual:'
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-700 cursor-pointer transition">
                                     <div class="flex items-center gap-3">
                                         <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-green-500 checkbox-alerta-cancelar">
                                         <div class="flex flex-col">
                                             <span class="font-bold text-white uppercase">${alerta.ativo}</span>
-                                            <span class="text-[10px] text-slate-500">Mercado: <b class="text-green-400">${precoAtualTexto}</b></span>
+                                            <span class="text-[10px] text-slate-500">Cotação Atual: <b class="text-green-400">${precoAtualTexto}</b></span>
                                         </div>
                                     </div>
                                     <span class="text-xs font-semibold text-slate-400">Alvo: <span class="text-slate-500 font-normal">${simboloCondicao}</span> R$ ${alerta.preco_alvo.toFixed(2)}</span>
