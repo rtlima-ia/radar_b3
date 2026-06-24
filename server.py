@@ -182,7 +182,6 @@ def obter_preco_interno(ativo_nome: str) -> float:
 
 @app.get("/ads.txt", response_class=PlainTextResponse)
 def obter_ads_txt():
-    # 🟢 ATUALIZADO: Código oficial do seu AdSense configurado corretamente
     return "google.com, pub-9200830725654504, DIRECT, f08c47fec0942fa0"
 
 @app.get("/", response_class=HTMLResponse)
@@ -195,8 +194,6 @@ def pagina_inicial():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>B3 Alerta - Radar Inteligente</title>
         <script src="https://cdn.tailwindcss.com"></script>
-        
-        <!-- 🟢 ATUALIZADO: Script do AdSense contendo o seu ID de Editor oficial -->
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
     <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between font-sans p-4">
@@ -280,21 +277,15 @@ def pagina_inicial():
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
                         <div id="listaAlertasDinamica" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
                         <button id="btnConfirmarCancelamentoLote" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg hidden">
-                            Cancelar Itens Selecionados 🔒
+                            Cancelar
                         </button>
                     </div>
                 </div>
 
                 <div id="feedback" class="mt-6 hidden p-5 rounded-xl border"></div>
 
-                <!-- 🟢 ATUALIZADO: Bloco de anúncio interno configurado com o seu ID de Editor oficial -->
                 <div class="mt-6 pt-4 border-t border-slate-800/60 flex justify-center">
-                    <ins class="adsbygoogle"
-                         style="display:block; min-width:300px; max-width:100%;"
-                         data-ad-client="ca-pub-9200830725654504"
-                         data-ad-slot="0000000000"
-                         data-ad-format="auto"
-                         data-full-width-responsive="true"></ins>
+                    <ins class="adsbygoogle" style="display:block; min-width:300px; max-width:100%;" data-ad-client="ca-pub-9200830725654504" data-ad-slot="0000000000" data-ad-format="auto" data-full-width-responsive="true"></ins>
                     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                 </div>
             </div>
@@ -457,6 +448,9 @@ def pagina_inicial():
                         listaDiv.innerHTML = "";
                         dados.alertas.forEach(alerta => {
                             const precoAtualTexto = alerta.preco_atual > 0 ? `R$ ${alerta.preco_atual.toFixed(2)}` : "Carregando...";
+                            // 🟢 ATUALIZADO: Inclui dinamicamente o símbolo textual de condição (>= ou <=) ao lado do preço alvo configurado
+                            const simboloCondicao = alerta.condicao === "maior" ? "📈 ≥" : "📉 ≤";
+                            
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-700 cursor-pointer transition">
                                     <div class="flex items-center gap-3">
@@ -466,7 +460,7 @@ def pagina_inicial():
                                             <span class="text-[10px] text-slate-500">Mercado: <b class="text-green-400">${precoAtualTexto}</b></span>
                                         </div>
                                     </div>
-                                    <span class="text-xs font-semibold text-slate-400">Alvo: R$ ${alerta.preco_alvo.toFixed(2)}</span>
+                                    <span class="text-xs font-semibold text-slate-400">Alvo: <span class="text-slate-500 font-normal">${simboloCondicao}</span> R$ ${alerta.preco_alvo.toFixed(2)}</span>
                                 </label>
                             `;
                             listaDiv.insertAdjacentHTML('beforeend', itemHtml);
@@ -611,7 +605,9 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
             "id": a.id, 
             "ativo": a.ativo, 
             "preco_alvo": a.preco_alvo,
-            "preco_atual": cotacoes_usuario.get(a.ativo, 0.0)
+            "preco_atual": cotacoes_usuario.get(a.ativo, 0.0),
+            # 🟢 ATUALIZADO: Passa a propriedade da condição para a montagem dinâmica do HTML do Frontend
+            "condicao": a.condicao
         })
         
     return {"status": "sucesso", "alertas": retorno_alertas}
