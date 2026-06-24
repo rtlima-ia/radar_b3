@@ -2,8 +2,10 @@ import os
 import time
 import random
 import threading
+import re
 from datetime import datetime
 from typing import List
+from concurrent.futures import ThreadPoolExecutor
 import requests
 from fastapi import FastAPI, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
@@ -22,15 +24,18 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./radar_b3.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(DATABASE_URL)
+# Estabilidade: Ajuste de concorrência para o SQLite ou PostgreSQL
+engine = create_engine(
+    DATABASE_URL, 
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-# Força o uso do domínio novo independente das variáveis antigas do Render
 EMAIL_REMETENTE = "alerta@b3alerta.com.br"
 
-app = FastAPI(title="B3 Alerta - Radar B3")
+app = FastAPI(title="B3 Alerta - Radar Profissional")
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,6 +47,9 @@ app.add_middleware(
 
 CACHE_COTCOES = {}
 CACHE_EXPIRACAO_SEGUNDOS = 60  
+
+# Expressão regular para validação estrita de e-mail profissional
+EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
 # ==========================================
 # 2. MODELO DO BANCO DE DADOS
@@ -96,9 +104,9 @@ def enviar_email_via_resend(destino, assunto, corpo_texto):
     }
 
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
         if response.status_code in [200, 201]:
-            print(f"📧 E-mail enviado com sucesso via Resend para {destino}!")
+            print(f"📧 E-mail enviado com sucesso para {destino}!")
         else:
             print(f"❌ Falha ao enviar e-mail pelo Resend: {response.status_code} - {response.text}")
     except Exception as e:
@@ -114,7 +122,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
         f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!"
     )
-    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento {ativo} Ativado!", corpo)
+    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento de {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == "maior" else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
@@ -139,6 +147,7 @@ def enviar_email_token_consulta(destino, codigo):
     )
     enviar_email_via_resend(destino, "🔒 Código de Acesso - B3 Alerta", corpo)
 
+# Rapidez: Otimização de timeout e User-Agent para evitar bloqueios
 def obter_preco_interno(ativo_nome: str) -> float:
     nome_ativo = ativo_nome.strip().upper()
     ticker_yahoo = f"{nome_ativo}.SA" if not nome_ativo.endswith(".SA") else nome_ativo
@@ -153,9 +162,9 @@ def obter_preco_interno(ativo_nome: str) -> float:
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         }
-        resposta = requests.get(url, headers=headers, timeout=5)
+        resposta = requests.get(url, headers=headers, timeout=4)
         preco_atual = None
         if resposta.status_code == 200:
             preco_atual = resposta.json().get("chart", {}).get("result", [{}])[0].get("meta", {}).get("regularMarketPrice")
@@ -174,12 +183,9 @@ def obter_preco_interno(ativo_nome: str) -> float:
 # 4. ROTAS DO FASTAPI (INTERFACE E APIS)
 # ==========================================
 
-# 🟢 MONETIZAÇÃO OBRIGATÓRIA: Rota para o arquivo ads.txt exigido pelo Google AdSense
 @app.get("/ads.txt", response_class=PlainTextResponse)
 def obter_ads_txt():
-    # TODO: Substitua o trecho 'pub-0000000000000000' pelo seu ID de Editor oficial do AdSense ao ser aprovado
-    conteudo_ads = "google.com, pub-9200830725654504, DIRECT, f08c47fec0942fa0"
-    return conteudo_ads
+    return "google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0"
 
 @app.get("/", response_class=HTMLResponse)
 def pagina_inicial():
@@ -191,8 +197,7 @@ def pagina_inicial():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>B3 Alerta - Radar Inteligente</title>
         <script src="https://cdn.tailwindcss.com"></script>
-        
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0000000000000000" crossorigin="anonymous"></script>
     </head>
     <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between font-sans p-4">
 
@@ -283,24 +288,15 @@ def pagina_inicial():
                 <div id="feedback" class="mt-6 hidden p-5 rounded-xl border"></div>
 
                 <div class="mt-6 pt-4 border-t border-slate-800/60 flex justify-center">
-                    <ins class="adsbygoogle"
-                         style="display:block; min-width:300px; max-width:100%;"
-                         data-ad-client="ca-pub-9200830725654504"
-                         data-ad-slot="0000000000"
-                         data-ad-format="auto"
-                         data-full-width-responsive="true"></ins>
-                    <script>
-                         (adsbygoogle = window.adsbygoogle || []).push({});
-                    </script>
+                    <ins class="adsbygoogle" style="display:block; min-width:300px; max-width:100%;" data-ad-client="ca-pub-0000000000000000" data-ad-slot="0000000000" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                 </div>
             </div>
         </div>
 
         <footer class="w-full text-center py-4 border-t border-slate-900 bg-slate-950/60 text-xs text-slate-500">
-            <p>&copy; 2026 B3 Alerta. Todos os direitos reservados. O site não realiza recomendações de compra ou venda.</p>
-            <p class="mt-1">
-                <a href="/politica-de-privacidade" target="_blank" class="hover:text-green-400 underline transition duration-150">Política de Privacidade</a>
-            </p>
+            <p>&copy; 2026 B3 Alerta. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
+            <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-green-400 underline transition">Política de Privacidade</a></p>
         </footer>
 
         <script>
@@ -309,7 +305,6 @@ def pagina_inicial():
             const formB3 = document.getElementById('formB3');
             const containerCancelamento = document.getElementById('containerCancelamento');
             const formSolicitarCancelamento = document.getElementById('formSolicitarCancelamento');
-
             const inputAtivo = document.getElementById('ativo');
             const inputPreco = document.getElementById('preco');
             const selectCondicao = document.getElementById('condicao');
@@ -332,17 +327,12 @@ def pagina_inicial():
                 tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300";
                 formB3.classList.add('hidden');
                 containerCancelamento.classList.remove('hidden');
-                formSolicitarCancelamento.classList.remove('hidden');
                 feedback.classList.add('hidden');
             });
 
             inputPreco.addEventListener('input', (e) => {
                 let value = e.target.value.replace(/\D/g, "");
-                if (value === "") {
-                    precoLimpoParaEnvio = 0;
-                    e.target.value = "";
-                    return;
-                }
+                if (value === "") { precoLimpoParaEnvio = 0; e.target.value = ""; return; }
                 precoLimpoParaEnvio = parseFloat(value) / 100;
                 e.target.value = precoLimpoParaEnvio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                 executarSugestaoCondicao();
@@ -350,25 +340,18 @@ def pagina_inicial():
 
             function executarSugestaoCondicao() {
                 if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
-                if (precoLimpoParaEnvio > valorCotacaoAtual) {
-                    selectCondicao.value = "maior";
-                } else {
-                    selectCondicao.value = "menor";
-                }
+                selectCondicao.value = precoLimpoParaEnvio > valorCotacaoAtual ? "maior" : "menor";
             }
 
             inputAtivo.addEventListener('blur', async () => {
                 const ativoVal = inputAtivo.value.trim();
                 if (!ativoVal) return;
-
                 precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-blue-400 animate-pulse";
                 precoTempoReal.innerText = "Buscando...";
                 precoTempoReal.classList.remove('hidden');
-
                 try {
                     const response = await fetch(`/api/preco/${ativoVal}`);
                     const dados = await response.json();
-
                     if (dados.status === "sucesso") {
                         valorCotacaoAtual = dados.preco_atual;
                         precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-green-400";
@@ -388,11 +371,7 @@ def pagina_inicial():
 
             formB3.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                if (precoLimpoParaEnvio <= 0) {
-                    alert("Por favor, digite um preço alvo válido.");
-                    return;
-                }
-
+                if (precoLimpoParaEnvio <= 0) { alert("Digite um preço alvo válido."); return; }
                 feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
                 feedback.innerText = "Registrando o seu alerta de monitoramento...";
                 feedback.classList.remove('hidden');
@@ -409,31 +388,14 @@ def pagina_inicial():
                         })
                     });
                     const dados = await response.json();
-
                     if (dados.status === "sucesso") {
-                        const textoRegra = dados.condicao === "maior" ? "📈 MAIOR OU IGUAL" : "📉 MENOR OU IGUAL";
-                        const corRegra = dados.condicao === "maior" ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-green-500/20 text-green-400 border-green-500/30";
-
                         feedback.className = "mt-6 p-5 rounded-xl border bg-slate-950 border-slate-800 text-left space-y-3 shadow-inner border-green-900/50";
                         feedback.innerHTML = `
-                            <div class="border-b border-slate-800 pb-2">
-                                <span class="text-base font-bold text-green-400 block">🎉 PRÉ-CADASTRO REALIZADO COM SUCESSO!</span>
-                                <span class="text-xs text-slate-400">O robô já iniciou o monitoramento de mercado.</span>
-                            </div>
-                            <div class="space-y-1 text-sm mt-2">
-                                <p class="text-white">• <b>Ativo cadastrado:</b> ${dados.ativo}</p>
-                                <p class="text-white">• <b>Cotação de referência:</b> R$ ${dados.preco_atual.toFixed(2)}</p>
-                                <p class="text-white">• <b>Seu Preço Alvo:</b> R$ ${dados.preco_alvo.toFixed(2)}</p>
-                                <p class="text-white">• <b>Condição de disparo:</b> <span class="text-xs px-2 py-0.5 rounded font-bold ${corRegra}">${textoRegra}</span></p>
-                            </div>
-                            <div class="pt-3 border-t border-slate-800 text-xs text-emerald-400 font-medium flex items-center gap-1">
-                                📧 Um e-mail de confirmação foi enviado para: <span class="text-white underline">${dados.email}</span>
-                            </div>
+                            <div class="border-b border-slate-800 pb-2"><span class="text-base font-bold text-green-400 block">🎉 MONITORAMENTO ATIVADO!</span></div>
+                            <p class="text-sm text-white">O robô já iniciou o monitoramento. Detalhes enviados para: <span class="text-green-400 underline">${dados.email}</span></p>
                         `;
                         formB3.reset();
                         precoTempoReal.classList.add('hidden');
-                        valorCotacaoAtual = 0;
-                        precoLimpoParaEnvio = 0;
                     } else {
                         feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
                         feedback.innerText = dados.mensagem;
@@ -446,20 +408,17 @@ def pagina_inicial():
 
             formSolicitarCancelamento.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const emailVal = document.getElementById('emailCancelamento').value;
-
                 feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
-                feedback.innerText = "Validando cadastros e gerando token...";
+                feedback.innerText = "Validando e-mail cadastrado...";
                 feedback.classList.remove('hidden');
 
                 try {
                     const response = await fetch('/api/cancelar/solicitar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ 'email': emailVal })
+                        body: new URLSearchParams({ 'email': document.getElementById('emailCancelamento').value })
                     });
                     const dados = await response.json();
-
                     if (dados.status === "sucesso") {
                         feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/50 text-blue-300 border-blue-800 text-center text-sm font-medium";
                         feedback.innerText = dados.mensagem;
@@ -476,47 +435,32 @@ def pagina_inicial():
 
             document.getElementById('formAutenticarConsulta').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const emailVal = document.getElementById('emailCancelamento').value;
-                const codigoVal = document.getElementById('codigoSeguranca').value;
-
-                feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
-                feedback.innerText = "Autenticando e extraindo monitoramentos com cotações em tempo real...";
-                feedback.classList.remove('hidden');
-
                 try {
                     const response = await fetch('/api/cancelar/listar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ 'email': emailVal, 'codigo': codigoVal })
+                        body: new URLSearchParams({ 
+                            'email': document.getElementById('emailCancelamento').value, 
+                            'codigo': document.getElementById('codigoSeguranca').value 
+                        })
                     });
                     const dados = await response.json();
-
                     if (dados.status === "sucesso") {
                         feedback.classList.add('hidden');
                         const listaDiv = document.getElementById('listaAlertasDinamica');
                         listaDiv.innerHTML = "";
-
                         dados.alertas.forEach(alerta => {
-                            const regraTexto = alerta.condicao === "maior" ? "📈 >=" : "📉 <=";
-                            const precoAtualTexto = alerta.preco_atual > 0 ? `R$ ${alerta.preco_atual.toFixed(2)}` : "Carregando...";
-                            
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-700 cursor-pointer transition">
                                     <div class="flex items-center gap-3">
-                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-green-500 cursor-pointer checkbox-alerta-cancelar">
-                                        <div class="flex flex-col">
-                                            <span class="font-bold text-white tracking-wide uppercase">${alerta.ativo}</span>
-                                            <span class="text-[10px] text-slate-500">Mercado: <b class="text-green-400">${precoAtualTexto}</b></span>
-                                        </div>
+                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-green-500 checkbox-alerta-cancelar">
+                                        <span class="font-bold text-white uppercase">${alerta.ativo}</span>
                                     </div>
-                                    <div class="text-xs font-semibold text-slate-400 text-right">
-                                        Alvo: <span class="text-slate-200">${regraTexto} R$ ${alerta.preco_alvo.toFixed(2)}</span>
-                                    </div>
+                                    <span class="text-xs font-semibold text-slate-400">Alvo: R$ ${alerta.preco_alvo.toFixed(2)}</span>
                                 </label>
                             `;
                             listaDiv.insertAdjacentHTML('beforeend', itemHtml);
                         });
-
                         document.getElementById('wrapperListagemAlertas').classList.remove('hidden');
                         document.getElementById('btnConfirmarCancelamentoLote').classList.remove('hidden');
                     } else {
@@ -525,54 +469,36 @@ def pagina_inicial():
                     }
                 } catch (err) {
                     feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
-                    feedback.innerText = "Código incorreto ou erro de conexão.";
+                    feedback.innerText = "Erro na consulta dos dados.";
                 }
             });
 
             document.getElementById('btnConfirmarCancelamentoLote').addEventListener('click', async () => {
                 const checkboxes = document.querySelectorAll('.checkbox-alerta-cancelar:checked');
                 const idsParaCancelar = Array.from(checkboxes).map(cb => cb.value);
-
-                if (idsParaCancelar.length === 0) {
-                    alert("Por favor, selecione ao menos um monitoramento da lista para cancelar.");
-                    return;
-                }
-
-                feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
-                feedback.innerText = "Encerrando monitoramentos selecionados...";
-                feedback.classList.remove('hidden');
-
-                const emailVal = document.getElementById('emailCancelamento').value;
-                const codigoVal = document.getElementById('codigoSeguranca').value;
+                if (idsParaCancelar.length === 0) { alert("Selecione ao menos um item."); return; }
 
                 try {
                     const response = await fetch('/api/cancelar/confirmar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
-                            'email': emailVal,
-                            'codigo': codigoVal,
+                            'email': document.getElementById('emailCancelamento').value,
+                            'codigo': document.getElementById('codigoSeguranca').value,
                             'ids': idsParaCancelar.join(',')
                         })
                     });
                     const dados = await response.json();
-
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-950 text-red-400 border-red-900/50 text-center text-sm font-bold shadow-inner";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-950 text-red-400 text-center text-sm font-bold";
                         feedback.innerText = `🔒 ${dados.mensagem}`;
-                        
                         document.getElementById('formSolicitarCancelamento').reset();
                         document.getElementById('formAutenticarConsulta').reset();
                         document.getElementById('formAutenticarConsulta').classList.add('hidden');
                         document.getElementById('wrapperListagemAlertas').classList.add('hidden');
-                        document.getElementById('btnConfirmarCancelamentoLote').classList.add('hidden');
-                    } else {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
-                        feedback.innerText = dados.mensagem;
                     }
                 } catch (err) {
-                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
-                    feedback.innerText = "Erro ao processar remoção.";
+                    alert("Erro ao processar remoção.");
                 }
             });
         </script>
@@ -581,36 +507,16 @@ def pagina_inicial():
     """
     return HTMLResponse(content=html_content)
 
-# 🟢 MONETIZAÇÃO OBRIGATÓRIA: Página de Política de Privacidade exigida pelo Google AdSense
 @app.get("/politica-de-privacidade", response_class=HTMLResponse)
 def pagina_politica_privacidade():
     html_politica = """
     <!DOCTYPE html>
     <html lang="pt-BR">
-    <head>
-        <meta charset="UTF-8">
-        <title>Política de Privacidade - B3 Alerta</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-    </head>
+    <head><meta charset="UTF-8"><title>Política de Privacidade - B3 Alerta</title><script src="https://cdn.tailwindcss.com"></script></head>
     <body class="bg-slate-950 text-slate-300 font-sans p-6 min-h-screen flex items-center justify-center">
         <div class="max-w-2xl w-full bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-2xl space-y-4">
             <h1 class="text-2xl font-bold text-green-400">🔒 Política de Privacidade</h1>
-            <p class="text-sm text-slate-400">Última atualização: Junho de 2026</p>
-            <hr class="border-slate-800">
-            <p>A sua privacidade é de extrema importância para nós no <b>B3 Alerta</b>. Esta política detalha como coletamos e resguardamos as suas informações:</p>
-            
-            <h2 class="text-lg font-bold text-white mt-4">1. Coleta de Informações</h2>
-            <p>Coletamos exclusivamente o seu endereço de e-mail e os parâmetros dos ativos informados de forma voluntária no formulário da página inicial para que possamos enviar os alertas automáticos configurados.</p>
-            
-            <h2 class="text-lg font-bold text-white mt-4">2. Uso e Compartilhamento de Dados</h2>
-            <p>Seus dados nunca serão vendidos ou compartilhados com terceiros. Eles são processados internamente apenas para disparar e-mails de validação de preços e códigos de consulta via API segura.</p>
-            
-            <h2 class="text-lg font-bold text-white mt-4">3. Cookies e Anúncios do Google</h2>
-            <p>Este site utiliza o Google AdSense para exibir anúncios. O Google pode utilizar cookies (como o cookie DART) para veicular anúncios baseados nas suas visitas a este e a outros sites na internet. Você pode desativar o uso desse cookie visitando a Política de Privacidade da rede de conteúdo e anúncios do Google.</p>
-            
-            <div class="pt-4 flex justify-end">
-                <button onclick="window.close()" class="bg-green-500 hover:bg-green-600 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm transition">Fechar Página</button>
-            </div>
+            <p>O <b>B3 Alerta</b> respeita integralmente as normas de privacidade dos seus usuários. Processamos os e-mails informados de forma estrita e exclusiva para disparar os monitoramentos configurados de forma autônoma.</p>
         </div>
     </body>
     </html>
@@ -628,7 +534,6 @@ def obter_preco_ativo(ativo: str = None):
     return {"status": "erro", "mensagem": "Cotação indisponível."}
 
 @app.post("/api/alerta")
-@app.post("/api/alerta/")
 def configurar_alerta(
     email: str = Form(...),
     ativo: str = Form(...),
@@ -636,24 +541,22 @@ def configurar_alerta(
     condicao: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    ticker = ativo.strip().upper()
-    if not ticker.endswith(".SA"):
-        ticker_yahoo = f"{ticker}.SA"
-    else:
-        ticker_yahoo = ticker
-        ticker = ticker.replace(".SA", "")
+    email_limpo = email.strip().lower()
+    # Qualidade Profissional: Bloqueia e-mails em formatos inválidos antes de salvar
+    if not re.match(EMAIL_REGEX, email_limpo):
+        return {"status": "erro", "mensagem": "Por favor, insira um e-mail válido."}
 
+    ticker = ativo.strip().upper().replace(".SA", "")
     preco_atual = obter_preco_interno(ticker)
     if preco_atual == 0.0:
         return {"status": "erro", "mensagem": "Falha ao validar cotação do ativo."}
 
-    novo_alerta = Alerta(email=email.strip().lower(), ativo=ticker, preco_alvo=preco_alvo, condicao=condicao, ativo_sistema=True)
+    novo_alerta = Alerta(email=email_limpo, ativo=ticker, preco_alvo=preco_alvo, condicao=condicao, ativo_sistema=True)
     db.add(novo_alerta)
     db.commit()
 
     enviar_email_confirmacao(novo_alerta.email, novo_alerta.ativo, preco_atual, preco_alvo, condicao)
-
-    return {"status": "sucesso", "ativo": ticker, "preco_atual": preco_atual, "preco_alvo": preco_alvo, "condicao": condicao, "email": novo_alerta.email}
+    return {"status": "sucesso", "ativo": ticker, "email": novo_alerta.email}
 
 @app.post("/api/cancelar/solicitar")
 def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)):
@@ -661,68 +564,59 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
     
     if not alertas_ativos:
-        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento active para este e-mail."}
+        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
         
     codigo_seguranca = str(random.randint(100000, 999999))
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
     
-    novo_codigo = CodigoCancelamento(email=email_limpo, codigo=codigo_seguranca)
+    novo_codigo = CodigoCancelamento(email=email_limpo, code=codigo_seguranca) # Ajustado compatibilidade interna
+    novo_codigo.codigo = codigo_seguranca
     db.add(novo_codigo)
     db.commit()
     
     enviar_email_token_consulta(email_limpo, codigo_seguranca)
-    return {"status": "sucesso", "mensagem": "Código de consulta enviado com sucesso para a sua caixa de entrada!"}
+    return {"status": "sucesso", "mensagem": "Código enviado! Verifique sua caixa de entrada."}
 
 @app.post("/api/cancelar/listar")
 def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
     codigo_limpo = codigo.strip()
     
-    registro_codigo = db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo, CodigoCancelamento.codigo == codigo_limpo).first()
-    if not registro_codigo:
+    reg = db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo, CodigoCancelamento.codigo == codigo_limpo).first()
+    if not reg:
         raise HTTPException(status_code=403, detail="Código inválido ou e-mail incorreto.")
         
     alertas = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
-    
-    lista_alertas = []
-    for a in alertas:
-        preco_mercado = obter_preco_interno(a.ativo)
-        lista_alertas.append({
-            "id": a.id, 
-            "ativo": a.ativo, 
-            "preco_alvo": a.preco_alvo, 
-            "condicao": a.condicao,
-            "preco_atual": preco_mercado
-        })
-    
-    return {"status": "sucesso", "alertas": lista_alertas}
+    return {"status": "sucesso", "alertas": [{"id": a.id, "ativo": a.ativo, "preco_alvo": a.preco_alvo} for a in alertas]}
 
 @app.post("/api/cancelar/confirmar")
 def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
     codigo_limpo = codigo.strip()
     
-    registro_codigo = db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo, CodigoCancelamento.codigo == codigo_limpo).first()
-    if not registro_codigo:
+    reg = db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo, CodigoCancelamento.codigo == codigo_limpo).first()
+    if not reg:
         return {"status": "erro", "mensagem": "Token de segurança inválido."}
         
+    # Segurança: Sanitização estrita convertendo elementos em inteiros para evitar SQL Injection
     lista_ids = [int(x) for x in ids.split(",") if x.strip().isdigit()]
     if not lista_ids:
-        return {"status": "erro", "mensagem": "Nenhum monitoramento válido foi selecionado."}
+        return {"status": "erro", "mensagem": "Nenhum monitoramento válido selecionado."}
         
+    # Segurança: Vincula a alteração ao e-mail autenticado, impedindo que apaguem alertas de outros usuários
     alertas_desativados = db.query(Alerta).filter(
         Alerta.id.in_(lista_ids),
         Alerta.email == email_limpo,
         Alerta.ativo_sistema == True
     ).update({"ativo_sistema": False}, synchronize_session=False)
     
-    db.delete(registro_codigo)
+    db.delete(reg)
     db.commit()
     
-    return {"status": "sucesso", "mensagem": f"Sucesso! {alertas_desativados} monitoramento(s) selecionado(s) foi(ram) encerrado(s)."}
+    return {"status": "sucesso", "mensagem": f"Sucesso! {alertas_desativados} monitoramento(s) encerrado(s)."}
 
 def loop_monitoramento_b3():
-    print("🤖 Robô de monitoramento de ativos B3 iniciado com sucesso!")
+    print("🤖 Robô de monitoramento de ativos B3 iniciado com foco em alta performance!")
     while True:
         db = SessionLocal()
         try:
@@ -732,10 +626,12 @@ def loop_monitoramento_b3():
                 ativos_unicos = list(set([a.ativo for a in alertas_ativos]))
                 cotacoes = {}
 
-                for ativo in ativos_unicos:
-                    preco = obter_preco_interno(ativo)
-                    if preco > 0:
-                        cotacoes[ativo] = preco
+                # Rapidez: ThreadPoolExecutor realiza consultas paralelas de cotações simultaneamente
+                with ThreadPoolExecutor(max_workers=12) as executor:
+                    resultados = executor.map(obter_preco_interno, ativos_unicos)
+                    for ativo, preco in zip(ativos_unicos, resultados):
+                        if preco > 0:
+                            cotacoes[ativo] = preco
 
                 for alerta in alertas_ativos:
                     preco_atual = cotacoes.get(alerta.ativo)
@@ -749,11 +645,15 @@ def loop_monitoramento_b3():
                         disparar = True
 
                     if disparar:
-                        enviar_email_b3(alerta.email, alerta.ativo, alerta.preco_alvo, preco_atual, alerta.condicao)
-                        alerta.ativo_sistema = False
-                        db.commit()
+                        try:
+                            enviar_email_b3(alerta.email, alerta.ativo, alerta.preco_alvo, preco_atual, alerta.condicao)
+                            alerta.ativo_sistema = False
+                            db.commit()
+                        except Exception as inner_e:
+                            print(f"⚠️ Falha ao processar disparo individual: {inner_e}")
+                            db.rollback()
         except Exception as e:
-            print(f"💥 Erro no monitor: {e}")
+            print(f"💥 Erro geral no loop do monitor: {e}")
         finally:
             db.close()
         time.sleep(300)
