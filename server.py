@@ -120,7 +120,8 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
         f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!"
     )
-    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento de {ativo} Ativado!", corpo)
+    # 🟢 ATUALIZADO: Assunto do e-mail alterado para remover a preposição "de"
+    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == "maior" else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
@@ -202,7 +203,8 @@ def pagina_inicial():
             <div class="max-w-xl w-full bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 my-8">
                 <div class="text-center mb-6">
                     <h1 class="text-3xl font-extrabold text-green-400">📡 B3 Alerta</h1>
-                    <p class="text-slate-400 mt-2 text-sm">Automação inteligente de monitoramento em tempo real.</p>
+                    <!-- 🟢 ATUALIZADO: Subtítulo simplificado conforme solicitado -->
+                    <p class="text-slate-400 mt-2 text-sm">Monitoramento em tempo real.</p>
                 </div>
 
                 <div class="flex border-b border-slate-800 mb-6">
@@ -276,8 +278,9 @@ def pagina_inicial():
                     <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-slate-800 pt-4">
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
                         <div id="listaAlertasDinamica" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+                        <!-- 🟢 ATUALIZADO: Label do botão alterada para incluir o ícone de cadeado solicitado -->
                         <button id="btnConfirmarCancelamentoLote" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg hidden">
-                            Cancelar
+                            Cancelar 🔒
                         </button>
                     </div>
                 </div>
@@ -448,7 +451,6 @@ def pagina_inicial():
                         listaDiv.innerHTML = "";
                         dados.alertas.forEach(alerta => {
                             const precoAtualTexto = alerta.preco_atual > 0 ? `R$ ${alerta.preco_atual.toFixed(2)}` : "Carregando...";
-                            // 🟢 ATUALIZADO: Inclui dinamicamente o símbolo textual de condição (>= ou <=) ao lado do preço alvo configurado
                             const simboloCondicao = alerta.condicao === "maior" ? "📈 ≥" : "📉 ≤";
                             
                             const itemHtml = `
@@ -606,7 +608,6 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
             "ativo": a.ativo, 
             "preco_alvo": a.preco_alvo,
             "preco_atual": cotacoes_usuario.get(a.ativo, 0.0),
-            # 🟢 ATUALIZADO: Passa a propriedade da condição para a montagem dinâmica do HTML do Frontend
             "condicao": a.condicao
         })
         
