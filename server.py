@@ -29,7 +29,6 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# 🟢 CONFIGURAÇÃO BREVO: Chave de API dedicada e remetente oficial
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alerta@b3alerta.com.br")
 
@@ -38,13 +37,9 @@ EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alerta@b3alerta.com.br")
 # ==========================================
 @asynccontextmanager
 async def lifespan(app_fastapi: FastAPI):
-    # Inicializa o banco de dados SQLite local de forma limpa
     Base.metadata.create_all(bind=engine)
-    
-    # Dispara a Thread do Robô de Monitoramento em paralelo sem prender a porta do Render
     thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
     thread_robo.start()
-    
     yield
 
 app = FastAPI(title="B3 Alerta - Radar Profissional", lifespan=lifespan)
@@ -112,11 +107,7 @@ def enviar_email_via_resend(destino, assunto, corpo_texto):
             "name": "B3 Alerta",
             "email": EMAIL_REMETENTE
         },
-        "to": [
-            {
-                "email": destino
-            }
-        ],
+        "to": [{"email": destino}],
         "subject": assunto,
         "textContent": corpo_texto
     }
@@ -157,7 +148,7 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
 def enviar_email_token_consulta(destino, codigo):
     corpo = (
         f"🔑 SEU CÓDIGO DE ACESSO — B3 ALERTA\n\n"
-        f"Você solicitou a consulta dos seus monitoramentos ativos.\n\n"
+        f"Você solicitou a consulta dos seus monitoramentos activos.\n\n"
         f"Utilize o código de segurança abaixo no site para carregar a sua lista de robôs em tempo real:\n"
         f"👉 {codigo} 👈\n\n"
         f"Após inserir este código, você poderá selecionar individualmente quais alertas deseja manter ou desativar.\n"
@@ -185,16 +176,26 @@ def obter_preco_interno(ativo_nome: str) -> float:
         preco_atual = None
         if resposta.status_code == 200:
             preco_atual = resposta.json().get("chart", {}).get("result", [{}])[0].get("meta", {}).get("regularMarketPrice")
-        if preco_atual is None:
-            preco_atual = yf.Ticker(ticker_yahoo).history(period="1d")["Close"].iloc[-1]
         
-        preco_final = round(float(preco_atual), 2)
-        CACHE_COTCOES[nome_ativo] = {"preco": preco_final, "timestamp": tempo_atual}
-        return preco_final
-    except Exception:
-        if nome_ativo in CACHE_COTCOES:
-            return CACHE_COTCOES[nome_ativo]["preco"]
-        return 0.0
+        if preco_atual is None:
+            # 🟢 MELHORIA DE ALTA PERFORMANCE: Evita quebras se o yfinance falhar em produção
+            ticker_obj = yf.Ticker(ticker_yahoo)
+            hist = ticker_obj.history(period="1d")
+            if not hist.empty:
+                preco_atual = hist["Close"].iloc[-1]
+            else:
+                preco_atual = ticker_obj.info.get("regularMarketPrice") or ticker_obj.info.get("currentPrice")
+
+        if preco_atual is not None:
+            preco_final = round(float(preco_atual), 2)
+            CACHE_COTCOES[nome_ativo] = {"preco": preco_final, "timestamp": tempo_atual}
+            return preco_final
+    except Exception as e:
+        print(f"⚠️ Alerta ao buscar cotação de {nome_ativo}: {e}")
+        
+    if nome_ativo in CACHE_COTCOES:
+        return CACHE_COTCOES[nome_ativo]["preco"]
+    return 0.0
 
 # ==========================================
 # 4. ROTAS DO FASTAPI (INTERFACE E APIS)
@@ -355,7 +356,7 @@ def pagina_inicial():
                 executarSugestaoCondicao();
             });
 
-            function ejecutarSugestaoCondicao() {
+            function executarSugestaoCondicao() {
                 if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
                 selectCondicao.value = precoLimpoParaEnvio > valorCotacaoAtual ? "maior" : "menor";
             }
@@ -367,21 +368,23 @@ def pagina_inicial():
                 precoTempoReal.innerText = "Buscando...";
                 precoTempoReal.classList.remove('hidden');
                 try {
-                    const response = await fetch(`/api/preco/${ativoVal}`);
+                    // 🟢 CORREÇÃO: Usa URL absoluta dinâmica baseada na localização atual da janela para evitar Mixed Content
+                    const baseApiUrl = window.location.origin;
+                    const response = await fetch(`${baseApiUrl}/api/preco/${ativoVal}`);
                     const dados = await response.json();
-                    if (dados.status === "sucesso") {
+                    if (dados.status === "sucesso" && dados.preco_atual > 0) {
                         valorCotacaoAtual = dados.preco_atual;
                         precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-green-400";
                         precoTempoReal.innerText = `Cotação Atual: R$ ${valorCotacaoAtual.toFixed(2)}`;
                         executarSugestaoCondicao();
                     } else {
-                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-red-500";
-                        precoTempoReal.innerText = "Não encontrado";
+                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-amber-500";
+                        precoTempoReal.innerText = "Sem sinal (Yahoo bloqueado)";
                         valorCotacaoAtual = 0;
                     }
                 } catch (err) {
                     precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-red-500";
-                    precoTempoReal.innerText = "Erro de conexão";
+                    precoTempoReal.innerText = "Erro de rede proxy";
                     valorCotacaoAtual = 0;
                 }
             });
@@ -394,7 +397,8 @@ def pagina_inicial():
                 feedback.classList.remove('hidden');
 
                 try {
-                    const response = await fetch('/api/alerta', {
+                    const baseApiUrl = window.location.origin;
+                    const response = await fetch(`${baseApiUrl}/api/alerta`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
@@ -430,7 +434,8 @@ def pagina_inicial():
                 feedback.classList.remove('hidden');
 
                 try {
-                    const response = await fetch('/api/cancelar/solicitar', {
+                    const baseApiUrl = window.location.origin;
+                    const response = await fetch(`${baseApiUrl}/api/cancelar/solicitar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ 'email': document.getElementById('emailCancelamento').value })
@@ -453,7 +458,8 @@ def pagina_inicial():
             document.getElementById('formAutenticarConsulta').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 try {
-                    const response = await fetch('/api/cancelar/listar', {
+                    const baseApiUrl = window.location.origin;
+                    const response = await fetch(`${baseApiUrl}/api/cancelar/listar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ 
@@ -502,7 +508,8 @@ def pagina_inicial():
                 if (idsParaCancelar.length === 0) { alert("Selecione ao menos um item."); return; }
 
                 try {
-                    const response = await fetch('/api/cancelar/confirmar', {
+                    const baseApiUrl = window.location.origin;
+                    const response = await fetch(`${baseApiUrl}/api/cancelar/confirmar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
@@ -548,7 +555,7 @@ def pagina_politica_privacidade():
 
 @app.get("/api/preco/{ativo}")
 @app.get("/api/preco")
-def obtener_preco_ativo(ativo: str = None):
+def obter_preco_ativo(ativo: str = None):
     if not ativo:
         return {"status": "erro", "mensagem": "O código do ativo é obrigatório."}
     preco = obter_preco_interno(ativo)
@@ -586,7 +593,7 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
     
     if not alertas_ativos:
-        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento active para este e-mail."}
+        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
         
     codigo_seguranca = str(random.randint(100000, 999999))
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
