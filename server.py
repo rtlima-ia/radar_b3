@@ -24,7 +24,6 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./radar_b3.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Estabilidade: Ajuste de concorrência para o SQLite ou PostgreSQL
 engine = create_engine(
     DATABASE_URL, 
     connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
@@ -48,7 +47,6 @@ app.add_middleware(
 CACHE_COTCOES = {}
 CACHE_EXPIRACAO_SEGUNDOS = 60  
 
-# Expressão regular para validação estrita de e-mail profissional
 EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
 # ==========================================
@@ -122,7 +120,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
         f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!"
     )
-    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento de {ativo} Ativado!", corpo)
+    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == "maior" else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
@@ -147,7 +145,6 @@ def enviar_email_token_consulta(destino, codigo):
     )
     enviar_email_via_resend(destino, "🔒 Código de Acesso - B3 Alerta", corpo)
 
-# Rapidez: Otimização de timeout e User-Agent para evitar bloqueios
 def obter_preco_interno(ativo_nome: str) -> float:
     nome_ativo = ativo_nome.strip().upper()
     ticker_yahoo = f"{nome_ativo}.SA" if not nome_ativo.endswith(".SA") else nome_ativo
@@ -490,7 +487,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-950 text-red-400 text-center text-sm font-bold";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-green-950 text-green-400 text-center text-sm font-bold";
                         feedback.innerText = `🔒 ${dados.mensagem}`;
                         document.getElementById('formSolicitarCancelamento').reset();
                         document.getElementById('formAutenticarConsulta').reset();
@@ -542,7 +539,6 @@ def configurar_alerta(
     db: Session = Depends(get_db)
 ):
     email_limpo = email.strip().lower()
-    # Qualidade Profissional: Bloqueia e-mails em formatos inválidos antes de salvar
     if not re.match(EMAIL_REGEX, email_limpo):
         return {"status": "erro", "mensagem": "Por favor, insira um e-mail válido."}
 
@@ -569,8 +565,8 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     codigo_seguranca = str(random.randint(100000, 999999))
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
     
-    novo_codigo = CodigoCancelamento(email=email_limpo, code=codigo_seguranca) # Ajustado compatibilidade interna
-    novo_codigo.codigo = codigo_seguranca
+    # 🟢 CORRIGIDO: Nome do argumento alterado de 'code' para 'codigo' para bater com o modelo do banco
+    novo_codigo = CodigoCancelamento(email=email_limpo, codigo=codigo_seguranca)
     db.add(novo_codigo)
     db.commit()
     
@@ -598,12 +594,10 @@ def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids:
     if not reg:
         return {"status": "erro", "mensagem": "Token de segurança inválido."}
         
-    # Segurança: Sanitização estrita convertendo elementos em inteiros para evitar SQL Injection
     lista_ids = [int(x) for x in ids.split(",") if x.strip().isdigit()]
     if not lista_ids:
         return {"status": "erro", "mensagem": "Nenhum monitoramento válido selecionado."}
         
-    # Segurança: Vincula a alteração ao e-mail autenticado, impedindo que apaguem alertas de outros usuários
     alertas_desativados = db.query(Alerta).filter(
         Alerta.id.in_(lista_ids),
         Alerta.email == email_limpo,
@@ -626,7 +620,6 @@ def loop_monitoramento_b3():
                 ativos_unicos = list(set([a.ativo for a in alertas_ativos]))
                 cotacoes = {}
 
-                # Rapidez: ThreadPoolExecutor realiza consultas paralelas de cotações simultaneamente
                 with ThreadPoolExecutor(max_workers=12) as executor:
                     resultados = executor.map(obter_preco_interno, ativos_unicos)
                     for ativo, preco in zip(ativos_unicos, resultados):
