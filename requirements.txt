@@ -4,5 +4,3 @@ sqlalchemy
 yfinance
 python-multipart
 requests
-pg8000==1.31.2
-gunicorn==23.0.0

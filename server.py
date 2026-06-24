@@ -20,16 +20,13 @@ import yfinance as yf
 # 1. CONFIGURAÇÕES INICIAIS E AMBIENTE
 # ==========================================
 
+# 🟢 RETORNADO PARA SQLITE: Padrão local caso a variável de ambiente não mude o caminho
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./radar_b3.db")
 
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    engine = create_engine(DATABASE_URL)
-
+engine = create_engine(
+    DATABASE_URL, 
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -37,20 +34,19 @@ RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 EMAIL_REMETENTE = "alerta@b3alerta.com.br"
 
 # ==========================================
-# EVENTOS DE INICIALIZAÇÃO ASSÍNCRONA (LIFESPAN)
+# EVENTOS DE INICIALIZAÇÃO (LIFESPAN)
 # ==========================================
 @asynccontextmanager
 async def lifespan(app_fastapi: FastAPI):
-    # 1. Cria as tabelas em segundo plano sem travar a inicialização do app
+    # Cria as tabelas locais na inicialização de forma limpa
     Base.metadata.create_all(bind=engine)
     
-    # 2. Inicia a Thread do Robô de Monitoramento de forma isolada
+    # Inicia a Thread do Robô de Monitoramento de forma isolada para evitar travar a porta do Render
     thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
     thread_robo.start()
     
     yield
 
-# Inicializa o app acoplando o ciclo de vida seguro para nuvem
 app = FastAPI(title="B3 Alerta - Radar Profissional", lifespan=lifespan)
 
 app.add_middleware(
@@ -494,7 +490,7 @@ def pagina_inicial():
             document.getElementById('btnConfirmarCancelamentoLote').addEventListener('click', async () => {
                 const checkboxes = document.querySelectorAll('.checkbox-alerta-cancelar:checked');
                 const idsParaCancelar = Array.from(checkboxes).map(cb => cb.value);
-                if (idsParaCancelar.length === 0) { alert("Selecione au menos um item."); return; }
+                if (idsParaCancelar.length === 0) { alert("Selecione ao menos um item."); return; }
 
                 try {
                     const response = await fetch('/api/cancelar/confirmar', {
