@@ -6,6 +6,7 @@ import re
 from datetime import datetime
 from typing import List
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 import requests
 from fastapi import FastAPI, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
@@ -21,9 +22,6 @@ import yfinance as yf
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./radar_b3.db")
 
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
 engine = create_engine(
     DATABASE_URL, 
     connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
@@ -31,10 +29,25 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-EMAIL_REMETENTE = "alerta@b3alerta.com.br"
+# 🟢 CONFIGURAÇÃO BREVO: Chave de API dedicada e remetente oficial
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alerta@b3alerta.com.br")
 
-app = FastAPI(title="B3 Alerta - Radar Profissional")
+# ==========================================
+# EVENTOS DE INICIALIZAÇÃO ASSÍNCRONA (LIFESPAN)
+# ==========================================
+@asynccontextmanager
+async def lifespan(app_fastapi: FastAPI):
+    # Inicializa o banco de dados SQLite local de forma limpa
+    Base.metadata.create_all(bind=engine)
+    
+    # Dispara a Thread do Robô de Monitoramento em paralelo sem prender a porta do Render
+    thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
+    thread_robo.start()
+    
+    yield
+
+app = FastAPI(title="B3 Alerta - Radar Profissional", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -71,8 +84,6 @@ class CodigoCancelamento(Base):
     codigo = Column(String, nullable=False)
     criado_em = Column(DateTime, default=datetime.utcnow)
 
-Base.metadata.create_all(bind=engine)
-
 def get_db():
     db = SessionLocal()
     try:
@@ -81,34 +92,43 @@ def get_db():
         db.close()
 
 # ==========================================
-# 3. FUNÇÕES DE ENVIO DE E-MAIL (RESEND API)
+# 3. FUNÇÕES DE ENVIO DE E-MAIL (BREVO API v3)
 # ==========================================
 
 def enviar_email_via_resend(destino, assunto, corpo_texto):
-    if not RESEND_API_KEY:
-        print("⚠️ Erro: RESEND_API_KEY não configurada no ambiente.")
+    if not BREVO_API_KEY:
+        print("⚠️ Erro: BREVO_API_KEY não configurada no ambiente.")
         return
 
-    url = "https://api.resend.com/emails"
+    url = "https://api.brevo.com/v3/smtp/email"
     headers = {
-        "Authorization": f"Bearer {RESEND_API_KEY}",
-        "Content-Type": "application/json"
+        "api-key": BREVO_API_KEY,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
     }
+    
     payload = {
-        "from": f"B3 Alerta <{EMAIL_REMETENTE}>",
-        "to": [destino],
+        "sender": {
+            "name": "B3 Alerta",
+            "email": EMAIL_REMETENTE
+        },
+        "to": [
+            {
+                "email": destino
+            }
+        ],
         "subject": assunto,
-        "text": corpo_texto
+        "textContent": corpo_texto
     }
 
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=10)
-        if response.status_code in [200, 201]:
-            print(f"📧 E-mail enviado com sucesso para {destino}!")
+        if response.status_code in [200, 201, 202]:
+            print(f"📧 E-mail via Brevo enviado com sucesso para {destino}!")
         else:
-            print(f"❌ Falha ao enviar e-mail pelo Resend: {response.status_code} - {response.text}")
+            print(f"❌ Falha ao enviar e-mail pelo Brevo: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"💥 Erro na conexão com a API do Resend: {e}")
+        print(f"💥 Erro na conexão com a API do Brevo: {e}")
 
 def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
     texto_condicao = "MAIOR ou igual a" if condicao == "maior" else "MENOR ou igual a"
@@ -120,7 +140,6 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao):
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
         f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!"
     )
-    # 🟢 ATUALIZADO: Assunto do e-mail alterado para remover a preposição "de"
     enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao):
@@ -203,7 +222,6 @@ def pagina_inicial():
             <div class="max-w-xl w-full bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 my-8">
                 <div class="text-center mb-6">
                     <h1 class="text-3xl font-extrabold text-green-400">📡 B3 Alerta</h1>
-                    <!-- 🟢 ATUALIZADO: Subtítulo simplificado conforme solicitado -->
                     <p class="text-slate-400 mt-2 text-sm">Monitoramento em tempo real.</p>
                 </div>
 
@@ -278,7 +296,6 @@ def pagina_inicial():
                     <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-slate-800 pt-4">
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
                         <div id="listaAlertasDinamica" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-                        <!-- 🟢 ATUALIZADO: Label do botão alterada para incluir o ícone de cadeado solicitado -->
                         <button id="btnConfirmarCancelamentoLote" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg hidden">
                             Cancelar 🔒
                         </button>
@@ -331,14 +348,14 @@ def pagina_inicial():
             });
 
             inputPreco.addEventListener('input', (e) => {
-                let value = e.target.value.replace(/\D/g, "");
+                let value = e.target.value.replace(/\\D/g, "");
                 if (value === "") { precoLimpoParaEnvio = 0; e.target.value = ""; return; }
                 precoLimpoParaEnvio = parseFloat(value) / 100;
                 e.target.value = precoLimpoParaEnvio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                 executarSugestaoCondicao();
             });
 
-            function executarSugestaoCondicao() {
+            function ejecutarSugestaoCondicao() {
                 if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
                 selectCondicao.value = precoLimpoParaEnvio > valorCotacaoAtual ? "maior" : "menor";
             }
@@ -531,7 +548,7 @@ def pagina_politica_privacidade():
 
 @app.get("/api/preco/{ativo}")
 @app.get("/api/preco")
-def obter_preco_ativo(ativo: str = None):
+def obtener_preco_ativo(ativo: str = None):
     if not ativo:
         return {"status": "erro", "mensagem": "O código do ativo é obrigatório."}
     preco = obter_preco_interno(ativo)
@@ -540,7 +557,7 @@ def obter_preco_ativo(ativo: str = None):
     return {"status": "erro", "mensagem": "Cotação indisponível."}
 
 @app.post("/api/alerta")
-def configurar_alerta(
+def configuring_alerta(
     email: str = Form(...),
     ativo: str = Form(...),
     preco_alvo: float = Form(...),
@@ -569,7 +586,7 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
     
     if not alertas_ativos:
-        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
+        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento active para este e-mail."}
         
     codigo_seguranca = str(random.randint(100000, 999999))
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
@@ -678,6 +695,3 @@ def loop_monitoramento_b3():
         finally:
             db.close()
         time.sleep(300)
-
-thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
-thread_robo.start()
