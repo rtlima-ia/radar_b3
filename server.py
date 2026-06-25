@@ -169,7 +169,7 @@ def obter_preco_interno(ativo_nome: str) -> float:
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/122.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         }
         resposta = requests.get(url, headers=headers, timeout=4)
         preco_atual = None
@@ -606,7 +606,7 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
     if not reg:
         raise HTTPException(status_code=403, detail="Código inválido ou e-mail incorreto.")
         
-    # 🟢 MODIFICAÇÃO: Ordenação alfabética pelo ticker do ativo (.order_by(Alerta.ativo)) aplicada cirurgicamente
+    # 🟢 ORDENAÇÃO POR ATIVO NO BANCO DE DADOS APLICADA AQUI:
     alertas = db.query(Alerta).filter(Alerta.email == email_limpo).order_by(Alerta.ativo).all()
     
     ativos_usuario = list(set([a.ativo for a in alertas]))
