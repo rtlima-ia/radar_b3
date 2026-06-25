@@ -69,7 +69,6 @@ class Alerta(Base):
     ativo = Column(String, index=True, nullable=False)
     preco_alvo = Column(Float, nullable=False)
     condicao = Column(String, nullable=False)
-    # 🟢 REMOVIDO: A coluna ativo_sistema foi completamente eliminada para manter a tabela limpa
 
 class CodigoCancelamento(Base):
     __tablename__ = "codigos_cancelamento"
@@ -355,7 +354,7 @@ def pagina_inicial():
                 executarSugestaoCondicao();
             });
 
-            function executarSugestaoCondicao() {
+            function ejecutarSugestaoCondicao() {
                 if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
                 selectCondicao.value = precoLimpoParaEnvio > valorCotacaoAtual ? "maior" : "menor";
             }
@@ -377,7 +376,7 @@ def pagina_inicial():
                         executarSugestaoCondicao();
                     } else {
                         precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-amber-500";
-                        precoTempoReal.innerText = "Sem sinal (Yahoo bloqueado)";
+                        precoTempoReal.innerText = "Sem sinal ou não encontrado";
                         valorCotacaoAtual = 0;
                     }
                 } catch (err) {
@@ -591,7 +590,7 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo).all()
     
     if not alertas_ativos:
-        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
+        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento active para este e-mail."}
         
     codigo_seguranca = str(random.randint(100000, 999999))
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
@@ -612,7 +611,8 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
     if not reg:
         raise HTTPException(status_code=403, detail="Código inválido ou e-mail incorreto.")
         
-    alertas = db.query(Alerta).filter(Alerta.email == email_limpo).all()
+    # 🟢 MODIFICAÇÃO: Inclusão do .order_by(Alerta.ativo) para trazer a lista em ordem alfabética
+    alertas = db.query(Alerta).filter(Alerta.email == email_limpo).order_by(Alerta.ativo).all()
     
     ativos_usuario = list(set([a.ativo for a in alertas]))
     cotacoes_usuario = {}
@@ -648,7 +648,6 @@ def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids:
     if not lista_ids:
         return {"status": "erro", "mensagem": "Nenhum monitoramento válido selecionado."}
         
-    # 🟢 MODIFICAÇÃO DE EXCLUSÃO REAL: Agora remove os registros de vez em vez de atualizar flags
     alertas_removidos = db.query(Alerta).filter(
         Alerta.id.in_(lista_ids),
         Alerta.email == email_limpo
@@ -690,7 +689,6 @@ def loop_monitoramento_b3():
                     if disparar:
                         try:
                             enviar_email_b3(alerta.email, alerta.ativo, alerta.preco_alvo, preco_atual, alerta.condicao)
-                            # 🟢 MODIFICAÇÃO NO DISPARO: Remove o alerta cumprido diretamente da tabela
                             db.delete(alerta)
                             db.commit()
                         except Exception as inner_e:
