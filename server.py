@@ -69,7 +69,7 @@ class Alerta(Base):
     ativo = Column(String, index=True, nullable=False)
     preco_alvo = Column(Float, nullable=False)
     condicao = Column(String, nullable=False)
-    ativo_sistema = Column(Boolean, default=True)
+    # 🟢 REMOVIDO: A coluna ativo_sistema foi completamente eliminada para manter a tabela limpa
 
 class CodigoCancelamento(Base):
     __tablename__ = "codigos_cancelamento"
@@ -474,7 +474,6 @@ def pagina_inicial():
                             const precoAtualTexto = alerta.preco_atual > 0 ? `R$ ${alerta.preco_atual.toFixed(2)}` : "Carregando...";
                             const simboloCondicao = alerta.condicao === "maior" ? "📈 ≥" : "📉 ≤";
                             
-                            // 🟢 ATUALIZAÇÃO DA ETIQUETA SOLICITADA: Alterado de 'Mercado:' para 'Cotação Atual:'
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-700 cursor-pointer transition">
                                     <div class="flex items-center gap-3">
@@ -579,7 +578,7 @@ def configuring_alerta(
     if preco_atual == 0.0:
         return {"status": "erro", "mensagem": "Falha ao validar cotação do ativo."}
 
-    novo_alerta = Alerta(email=email_limpo, ativo=ticker, preco_alvo=preco_alvo, condicao=condicao, ativo_sistema=True)
+    novo_alerta = Alerta(email=email_limpo, ativo=ticker, preco_alvo=preco_alvo, condicao=condicao)
     db.add(novo_alerta)
     db.commit()
 
@@ -589,7 +588,7 @@ def configuring_alerta(
 @app.post("/api/cancelar/solicitar")
 def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
-    alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
+    alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo).all()
     
     if not alertas_ativos:
         return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
@@ -613,7 +612,7 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
     if not reg:
         raise HTTPException(status_code=403, detail="Código inválido ou e-mail incorreto.")
         
-    alertas = db.query(Alerta).filter(Alerta.email == email_limpo, Alerta.ativo_sistema == True).all()
+    alertas = db.query(Alerta).filter(Alerta.email == email_limpo).all()
     
     ativos_usuario = list(set([a.ativo for a in alertas]))
     cotacoes_usuario = {}
@@ -649,23 +648,23 @@ def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids:
     if not lista_ids:
         return {"status": "erro", "mensagem": "Nenhum monitoramento válido selecionado."}
         
-    alertas_desativados = db.query(Alerta).filter(
+    # 🟢 MODIFICAÇÃO DE EXCLUSÃO REAL: Agora remove os registros de vez em vez de atualizar flags
+    alertas_removidos = db.query(Alerta).filter(
         Alerta.id.in_(lista_ids),
-        Alerta.email == email_limpo,
-        Alerta.ativo_sistema == True
-    ).update({"ativo_sistema": False}, synchronize_session=False)
+        Alerta.email == email_limpo
+    ).delete(synchronize_session=False)
     
     db.delete(reg)
     db.commit()
     
-    return {"status": "sucesso", "mensagem": f"Sucesso! {alertas_desativados} monitoramento(s) encerrado(s)."}
+    return {"status": "sucesso", "mensagem": f"Sucesso! {alertas_removidos} monitoramento(s) excluído(s) da base."}
 
 def loop_monitoramento_b3():
     print("🤖 Robô de monitoramento de ativos B3 iniciado com foco em alta performance!")
     while True:
         db = SessionLocal()
         try:
-            alertas_ativos = db.query(Alerta).filter(Alerta.ativo_sistema == True).all()
+            alertas_ativos = db.query(Alerta).all()
             if alertas_ativos:
                 print(f"📊 Verificando {len(alertas_ativos)} monitoramentos no radar...")
                 ativos_unicos = list(set([a.ativo for a in alertas_ativos]))
@@ -691,7 +690,8 @@ def loop_monitoramento_b3():
                     if disparar:
                         try:
                             enviar_email_b3(alerta.email, alerta.ativo, alerta.preco_alvo, preco_atual, alerta.condicao)
-                            alerta.ativo_sistema = False
+                            # 🟢 MODIFICAÇÃO NO DISPARO: Remove o alerta cumprido diretamente da tabela
+                            db.delete(alerta)
                             db.commit()
                         except Exception as inner_e:
                             print(f"⚠️ Falha ao processar disparo individual: {inner_e}")
