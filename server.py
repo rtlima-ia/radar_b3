@@ -377,7 +377,7 @@ def pagina_inicial():
                         executarSugestaoCondicao();
                     } else {
                         precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-amber-500";
-                        precoTempoReal.innerText = "Sem sinal (Yahoo bloqueado)";
+                        precoTempoReal.innerText = "Sem sinal ou Ativo não encontrado";
                         valorCotacaoAtual = 0;
                     }
                 } catch (err) {
