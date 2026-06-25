@@ -69,6 +69,7 @@ class Alerta(Base):
     ativo = Column(String, index=True, nullable=False)
     preco_alvo = Column(Float, nullable=False)
     condicao = Column(String, nullable=False)
+    # 🟢 REMOVIDO: A coluna ativo_sistema foi completamente eliminada para manter a tabela limpa
 
 class CodigoCancelamento(Base):
     __tablename__ = "codigos_cancelamento"
@@ -354,7 +355,7 @@ def pagina_inicial():
                 executarSugestaoCondicao();
             });
 
-            function ejecutarSugestaoCondicao() {
+            function executarSugestaoCondicao() {
                 if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
                 selectCondicao.value = precoLimpoParaEnvio > valorCotacaoAtual ? "maior" : "menor";
             }
@@ -366,8 +367,8 @@ def pagina_inicial():
                 precoTempoReal.innerText = "Buscando...";
                 precoTempoReal.classList.remove('hidden');
                 try {
-                    // Restaurado para o formato original sem alterar rotas
-                    const response = await fetch(`/api/preco/${ativoVal}`);
+                    const baseApiUrl = window.location.origin;
+                    const response = await fetch(`${baseApiUrl}/api/preco/${ativoVal}`);
                     const dados = await response.json();
                     if (dados.status === "sucesso" && dados.preco_atual > 0) {
                         valorCotacaoAtual = dados.preco_atual;
@@ -375,9 +376,8 @@ def pagina_inicial():
                         precoTempoReal.innerText = `Cotação Atual: R$ ${valorCotacaoAtual.toFixed(2)}`;
                         executarSugestaoCondicao();
                     } else {
-                        // Mantida estritamente a alteração de texto solicitada
                         precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-amber-500";
-                        precoTempoReal.innerText = "Sem sinal ou não encontrado";
+                        precoTempoReal.innerText = "Sem sinal (Yahoo bloqueado)";
                         valorCotacaoAtual = 0;
                     }
                 } catch (err) {
@@ -395,7 +395,8 @@ def pagina_inicial():
                 feedback.classList.remove('hidden');
 
                 try {
-                    const response = await fetch(`/api/alerta`, {
+                    const baseApiUrl = window.location.origin;
+                    const response = await fetch(`${baseApiUrl}/api/alerta`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
@@ -431,7 +432,8 @@ def pagina_inicial():
                 feedback.classList.remove('hidden');
 
                 try {
-                    const response = await fetch(`/api/cancelar/solicitar`, {
+                    const baseApiUrl = window.location.origin;
+                    const response = await fetch(`${baseApiUrl}/api/cancelar/solicitar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ 'email': document.getElementById('emailCancelamento').value })
@@ -454,7 +456,8 @@ def pagina_inicial():
             document.getElementById('formAutenticarConsulta').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 try {
-                    const response = await fetch(`/api/cancelar/listar`, {
+                    const baseApiUrl = window.location.origin;
+                    const response = await fetch(`${baseApiUrl}/api/cancelar/listar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ 
@@ -503,7 +506,8 @@ def pagina_inicial():
                 if (idsParaCancelar.length === 0) { alert("Selecione ao menos um item."); return; }
 
                 try {
-                    const response = await fetch(`/api/cancelar/confirmar`, {
+                    const baseApiUrl = window.location.origin;
+                    const response = await fetch(`${baseApiUrl}/api/cancelar/confirmar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
@@ -608,8 +612,7 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
     if not reg:
         raise HTTPException(status_code=403, detail="Código inválido ou e-mail incorreto.")
         
-    # Mantida a ordenação correta por ativo/ticket solicitada
-    alertas = db.query(Alerta).filter(Alerta.email == email_limpo).order_by(Alerta.ativo).all()
+    alertas = db.query(Alerta).filter(Alerta.email == email_limpo).all()
     
     ativos_usuario = list(set([a.ativo for a in alertas]))
     cotacoes_usuario = {}
@@ -645,6 +648,7 @@ def confirmar_cancelamento(email: str = Form(...), codigo: str = Form(...), ids:
     if not lista_ids:
         return {"status": "erro", "mensagem": "Nenhum monitoramento válido selecionado."}
         
+    # 🟢 MODIFICAÇÃO DE EXCLUSÃO REAL: Agora remove os registros de vez em vez de atualizar flags
     alertas_removidos = db.query(Alerta).filter(
         Alerta.id.in_(lista_ids),
         Alerta.email == email_limpo
@@ -686,6 +690,7 @@ def loop_monitoramento_b3():
                     if disparar:
                         try:
                             enviar_email_b3(alerta.email, alerta.ativo, alerta.preco_alvo, preco_atual, alerta.condicao)
+                            # 🟢 MODIFICAÇÃO NO DISPARO: Remove o alerta cumprido diretamente da tabela
                             db.delete(alerta)
                             db.commit()
                         except Exception as inner_e:
