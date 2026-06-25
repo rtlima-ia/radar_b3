@@ -366,8 +366,8 @@ def pagina_inicial():
                 precoTempoReal.innerText = "Buscando...";
                 precoTempoReal.classList.remove('hidden');
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/preco/${ativoVal}`);
+                    // Restaurado para o formato original sem alterar rotas
+                    const response = await fetch(`/api/preco/${ativoVal}`);
                     const dados = await response.json();
                     if (dados.status === "sucesso" && dados.preco_atual > 0) {
                         valorCotacaoAtual = dados.preco_atual;
@@ -375,6 +375,7 @@ def pagina_inicial():
                         precoTempoReal.innerText = `Cotação Atual: R$ ${valorCotacaoAtual.toFixed(2)}`;
                         executarSugestaoCondicao();
                     } else {
+                        // Mantida estritamente a alteração de texto solicitada
                         precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-amber-500";
                         precoTempoReal.innerText = "Sem sinal ou não encontrado";
                         valorCotacaoAtual = 0;
@@ -394,8 +395,7 @@ def pagina_inicial():
                 feedback.classList.remove('hidden');
 
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/alerta`, {
+                    const response = await fetch(`/api/alerta`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
@@ -431,8 +431,7 @@ def pagina_inicial():
                 feedback.classList.remove('hidden');
 
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/cancelar/solicitar`, {
+                    const response = await fetch(`/api/cancelar/solicitar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ 'email': document.getElementById('emailCancelamento').value })
@@ -455,8 +454,7 @@ def pagina_inicial():
             document.getElementById('formAutenticarConsulta').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/cancelar/listar`, {
+                    const response = await fetch(`/api/cancelar/listar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ 
@@ -505,8 +503,7 @@ def pagina_inicial():
                 if (idsParaCancelar.length === 0) { alert("Selecione ao menos um item."); return; }
 
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/cancelar/confirmar`, {
+                    const response = await fetch(`/api/cancelar/confirmar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
@@ -590,7 +587,7 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo).all()
     
     if not alertas_ativos:
-        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento active para este e-mail."}
+        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
         
     codigo_seguranca = str(random.randint(100000, 999999))
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
@@ -611,7 +608,7 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
     if not reg:
         raise HTTPException(status_code=403, detail="Código inválido ou e-mail incorreto.")
         
-    # 🟢 MODIFICAÇÃO: Inclusão do .order_by(Alerta.ativo) para trazer a lista em ordem alfabética
+    # Mantida a ordenação correta por ativo/ticket solicitada
     alertas = db.query(Alerta).filter(Alerta.email == email_limpo).order_by(Alerta.ativo).all()
     
     ativos_usuario = list(set([a.ativo for a in alertas]))
