@@ -5,3 +5,4 @@ yfinance
 python-multipart
 requests
 psycopg2-binary
+jinja2
