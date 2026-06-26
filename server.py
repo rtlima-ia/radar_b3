@@ -222,7 +222,7 @@ def pagina_inicial():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>B3 Alerta - Radar Inteligente</title>
+        <title>B3 Alerta - Monitorando Ativos</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
@@ -585,7 +585,7 @@ def configuring_alerta(
 
     ticker = ativo.strip().upper().replace(".SA", "")
     
-    # 🟢 TRAVA DE DUPLICIDADE: Verifica se já existe um alerta idêntico ativo
+    # TRAVA DE DUPLICIDADE: Verifica se já existe um alerta idêntico ativo
     alerta_duplicado = db.query(Alerta).filter(
         Alerta.email == email_limpo,
         Alerta.ativo == ticker,
