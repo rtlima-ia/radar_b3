@@ -128,7 +128,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao: 
     texto_condicao = "MAIOR ou igual a" if condicao == 1 else "MENOR ou igual a"
     corpo = (
         f"✅ MONITORAMENTO CONFIGURADO COM SUCESSO!\n\n"
-        f"Seu robô para o ativo {ativo} está ativo.\n\n"
+        f"Seu robô para o ativo {ativo} está active.\n\n"
         f"📊 Cotação Atual de Mercado: R$ {preco_atual:.2f}\n"
         f"🎯 Seu Preço Alvo: R$ {preco_alvo:.2f}\n"
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
@@ -316,7 +316,7 @@ def pagina_inicial():
         </div>
 
         <footer class="w-full text-center py-4 border-t border-slate-900 bg-slate-950/60 text-xs text-slate-500">
-            <p>&copy; 2026 Radar B3. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
+            <p>&copy; 2026 Radar B3. Todos os direitos reservados. O site não realiza recommendations de investimentos.</p>
             <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-green-400 underline transition">Política de Privacidade</a></p>
         </footer>
 
