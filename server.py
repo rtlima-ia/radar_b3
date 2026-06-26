@@ -584,6 +584,21 @@ def configuring_alerta(
         return {"status": "erro", "mensagem": "Por favor, insira um e-mail válido."}
 
     ticker = ativo.strip().upper().replace(".SA", "")
+    
+    # 🟢 TRAVA DE DUPLICIDADE: Verifica se já existe um alerta idêntico ativo
+    alerta_duplicado = db.query(Alerta).filter(
+        Alerta.email == email_limpo,
+        Alerta.ativo == ticker,
+        Alerta.preco_alvo == preco_alvo,
+        Alerta.condicao == condicao
+    ).first()
+
+    if alerta_duplicado:
+        return {
+            "status": "erro", 
+            "mensagem": f"Você já possui um monitoramento ativo exatamente igual para {ticker} nesta mesma condição e preço alvo!"
+        }
+
     preco_atual = obter_preco_interno(ticker)
     if preco_atual == 0.0:
         return {"status": "erro", "mensagem": "Falha ao validar cotação do ativo."}
