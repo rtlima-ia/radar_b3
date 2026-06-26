@@ -48,7 +48,7 @@ async def lifespan(app_fastapi: FastAPI):
     thread_robo.start()
     yield
 
-app = FastAPI(title="B3 Alerta - Radar Profissional", lifespan=lifespan)
+app = FastAPI(title="Radar B3 - Monitorando Ativos", lifespan=lifespan)
 
 # Configurações de CORS e Segurança para evitar "Erro de Rede Proxy"
 app.add_middleware(
@@ -76,9 +76,7 @@ class Alerta(Base):
     email = Column(String, index=True, nullable=False)
     ativo = Column(String, index=True, nullable=False)
     preco_alvo = Column(Float, nullable=False)
-    # Regra 2: Campo condicao como numérico (0 = menor, 1 = maior)
     condicao = Column(Integer, nullable=False)
-    # Regra 1 Ajustada: Salvando estritamente DATE (sem horas e sem timestamp)
     data_inclusao = Column(Date, default=date.today, nullable=False)
 
 class CodigoCancelamento(Base):
@@ -157,7 +155,7 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao: int):
 
 def enviar_email_token_consulta(destino, codigo):
     corpo = (
-        f"🔑 SEU CÓDIGO DE ACESSO — RADAR B3 \n\n"
+        f"🔑 SEU CÓDIGO DE ACESSO — RADAR B3\n\n"
         f"Você solicitou a consulta dos seus monitoramentos ativos.\n\n"
         f"Utilize o código de segurança abaixo no site para carregar a sua lista de robôs em tempo real:\n"
         f"👉 {codigo} 👈\n\n"
@@ -223,6 +221,7 @@ def pagina_inicial():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Radar B3 - Monitorando Ativos</title>
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23020617' stroke='%2322c55e' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%234ade80' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%234ade80' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2322c55e'/%3E%3Cpolygon points='16,16 23,9 21,7' fill='%2322c55e' opacity='0.3'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
@@ -357,8 +356,9 @@ def pagina_inicial():
                 feedback.classList.add('hidden');
             });
 
+            // 🟢 MODIFICADO: Escapando a barra invertida com \\D para evitar quebra de string no Python
             inputPreco.addEventListener('input', (e) => {
-                let value = e.target.value.replace(/\\D/g, "");
+                let value = e.target.value.replace(/\\\\D/g, "");
                 if (value === "") { precoLimpoParaEnvio = 0; e.target.value = ""; return; }
                 precoLimpoParaEnvio = parseFloat(value) / 100;
                 e.target.value = precoLimpoParaEnvio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -392,7 +392,7 @@ def pagina_inicial():
                     }
                 } catch (err) {
                     precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-red-500";
-                    precoTempoReal.innerText = "Erro de rede proxy";
+                    precoTempoReal.innerText = "Erro de conexão";
                     valorCotacaoAtual = 0;
                 }
             });
@@ -550,7 +550,12 @@ def pagina_politica_privacidade():
     html_politica = """
     <!DOCTYPE html>
     <html lang="pt-BR">
-    <head><meta charset="UTF-8"><title>Política de Privacidade - Radar B3</title><script src="https://cdn.tailwindcss.com"></script></head>
+    <head>
+        <meta charset="UTF-8">
+        <title>Política de Privacidade - Radar B3</title>
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23020617' stroke='%2322c55e' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%234ade80' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%234ade80' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2322c55e'/%3E%3Cpolygon points='16,16 23,9 21,7' fill='%2322c55e' opacity='0.3'/%3E%3C/svg%3E">
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
     <body class="bg-slate-950 text-slate-300 font-sans p-6 min-h-screen flex items-center justify-center">
         <div class="max-w-2xl w-full bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-2xl space-y-4">
             <h1 class="text-2xl font-bold text-green-400">🔒 Política de Privacidade</h1>
@@ -585,7 +590,6 @@ def configuring_alerta(
 
     ticker = ativo.strip().upper().replace(".SA", "")
     
-    # TRAVA DE DUPLICIDADE: Verifica se já existe um alerta idêntico ativo
     alerta_duplicado = db.query(Alerta).filter(
         Alerta.email == email_limpo,
         Alerta.ativo == ticker,
