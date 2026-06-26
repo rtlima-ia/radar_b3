@@ -23,7 +23,6 @@ import yfinance as yf
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./radar_b3.db")
 
-# Ajuste automático de compatibilidade para conexões PostgreSQL/Neon
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
@@ -50,7 +49,6 @@ async def lifespan(app_fastapi: FastAPI):
 
 app = FastAPI(title="Radar B3 - Monitorando Ativos", lifespan=lifespan)
 
-# Configurações de CORS e Segurança para evitar "Erro de Rede Proxy"
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -214,7 +212,6 @@ def obter_ads_txt():
 
 @app.get("/", response_class=HTMLResponse)
 def pagina_inicial():
-    # 🟢 APLICADO: Transforma a string em raw string (r""") para aceitar a barra nativa do JavaScript sem bugar
     html_content = r"""
     <!DOCTYPE html>
     <html lang="pt-BR">
@@ -222,21 +219,21 @@ def pagina_inicial():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Radar B3 - Monitorando Ativos</title>
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23020617' stroke='%2322c55e' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%234ade80' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%234ade80' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2322c55e'/%3E%3Cpolygon points='16,16 23,9 21,7' fill='%2322c55e' opacity='0.3'/%3E%3C/svg%3E">
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23020617' stroke='%2306b6d4' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2306b6d4'/%3E%3Cpolygon points='16,16 23,9 21,7' fill='%2306b6d4' opacity='0.3'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
-    <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-between font-sans p-4">
+    <body class="bg-cyan-950 text-slate-100 min-h-screen flex flex-col items-center justify-between font-sans p-4">
 
         <div class="flex-grow flex items-center justify-center w-full">
-            <div class="max-w-xl w-full bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 my-8">
+            <div class="max-w-xl w-full bg-slate-900/90 p-8 rounded-2xl shadow-2xl border border-cyan-500/20 my-8">
                 <div class="text-center mb-6">
-                    <h1 class="text-3xl font-extrabold text-green-400">📡 Radar B3</h1>
+                    <h1 class="text-3xl font-extrabold text-cyan-400">📡 Radar B3</h1>
                     <p class="text-slate-400 mt-2 text-sm">Monitoramento em tempo real.</p>
                 </div>
 
                 <div class="flex border-b border-slate-800 mb-6">
-                    <button id="tabCadastro" class="flex-1 pb-3 text-sm font-bold text-green-400 border-b-2 border-green-400 focus:outline-none">
+                    <button id="tabCadastro" class="flex-1 pb-3 text-sm font-bold text-cyan-400 border-b-2 border-cyan-400 focus:outline-none">
                         📝 Criar Alerta
                     </button>
                     <button id="tabCancelamento" class="flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300">
@@ -249,33 +246,33 @@ def pagina_inicial():
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
                         <div class="relative">
                             <input type="text" id="ativo" placeholder="Digite e clique fora..." required
-                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500 uppercase">
-                            <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-bold text-green-400 hidden"></span>
+                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500 uppercase">
+                            <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-bold text-cyan-400 hidden"></span>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Seu E-mail para Alerta</label>
                         <input type="email" id="email" placeholder="seuemail@exemplo.com" required
-                            class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
+                            class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
                             <input type="text" id="preco" placeholder="R$ 0,00" required
-                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
+                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Me avise quando for:</label>
-                            <select id="condicao" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-green-500">
+                            <select id="condicao" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500">
                                 <option value="1">📈 Maior ou Igual</option>
                                 <option value="0">📉 Menor ou Igual</option>
                             </select>
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                    <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
                         Ativar Monitoramento 🚀
                     </button>
                 </form>
@@ -296,9 +293,9 @@ def pagina_inicial():
                         <div>
                             <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Insira o Código de 6 Dígitos</label>
                             <input type="text" id="codigoSeguranca" placeholder="Ex: 123456" maxlength="6" required
-                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-green-500">
+                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-cyan-500">
                         </div>
-                        <button type="submit" class="w-full bg-green-500 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                        <button type="submit" class="w-full bg-cyan-500 text-slate-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
                             Buscar Meus Monitoramentos 🔍
                         </button>
                     </form>
@@ -323,7 +320,7 @@ def pagina_inicial():
 
         <footer class="w-full text-center py-4 border-t border-slate-900 bg-slate-950/60 text-xs text-slate-500">
             <p>&copy; 2026 Radar B3. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
-            <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-green-400 underline transition">Política de Privacidade</a></p>
+            <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-cyan-400 underline transition">Política de Privacidade</a></p>
         </footer>
 
         <script>
@@ -342,7 +339,7 @@ def pagina_inicial():
             let precoLimpoParaEnvio = 0;
 
             tabCadastro.addEventListener('click', () => {
-                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-green-400 border-b-2 border-green-400 focus:outline-none";
+                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-cyan-400 border-b-2 border-cyan-400 focus:outline-none";
                 tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300";
                 formB3.classList.remove('hidden');
                 containerCancelamento.classList.add('hidden');
@@ -350,14 +347,13 @@ def pagina_inicial():
             });
 
             tabCancelamento.addEventListener('click', () => {
-                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-blue-400 border-b-2 border-blue-400 focus:outline-none";
+                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-cyan-400 border-b-2 border-cyan-400 focus:outline-none";
                 tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-slate-500 focus:outline-none hover:text-slate-300";
                 formB3.classList.add('hidden');
                 containerCancelamento.classList.remove('hidden');
                 feedback.classList.add('hidden');
             });
 
-            // 🟢 CORRIGIDO: Agora usa a barra nativa \D perfeitamente graças à raw string do Python
             inputPreco.addEventListener('input', (e) => {
                 let value = e.target.value.replace(/\D/g, "");
                 if (value === "") { precoLimpoParaEnvio = 0; e.target.value = ""; return; }
@@ -383,7 +379,7 @@ def pagina_inicial():
                     const dados = await response.json();
                     if (dados.status === "sucesso" && dados.preco_atual > 0) {
                         valorCotacaoAtual = dados.preco_atual;
-                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-green-400";
+                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-cyan-400";
                         precoTempoReal.innerText = `Cotação Atual: R$ ${valorCotacaoAtual.toFixed(2)}`;
                         executarSugestaoCondicao();
                     } else {
@@ -419,10 +415,10 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-slate-950 border-slate-800 text-left space-y-3 shadow-inner border-green-900/50";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-slate-950 border-slate-800 text-left space-y-3 shadow-inner border-cyan-900/50";
                         feedback.innerHTML = `
-                            <div class="border-b border-slate-800 pb-2"><span class="text-base font-bold text-green-400 block">🎉 MONITORAMENTO ATIVADO!</span></div>
-                            <p class="text-sm text-white">O robô já iniciou o monitoramento. Detalhes enviados para: <span class="text-green-400 underline">${dados.email}</span></p>
+                            <div class="border-b border-slate-800 pb-2"><span class="text-base font-bold text-cyan-400 block">🎉 MONITORAMENTO ATIVADO!</span></div>
+                            <p class="text-sm text-white">O robô já iniciou o monitoramento. Detalhes enviados para: <span class="text-cyan-400 underline">${dados.email}</span></p>
                         `;
                         formB3.reset();
                         precoTempoReal.classList.add('hidden');
@@ -488,10 +484,10 @@ def pagina_inicial():
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3 bg-slate-950 rounded-lg border border-slate-800 hover:border-slate-700 cursor-pointer transition">
                                     <div class="flex items-center gap-3">
-                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-green-500 checkbox-alerta-cancelar">
+                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-cyan-500 checkbox-alerta-cancelar">
                                         <div class="flex flex-col">
                                             <span class="font-bold text-white uppercase">${alerta.ativo}</span>
-                                            <span class="text-[10px] text-slate-500">Cotação Atual: <b class="text-green-400">${precoAtualTexto}</b></span>
+                                            <span class="text-[10px] text-slate-500">Cotação Atual: <b class="text-cyan-400">${precoAtualTexto}</b></span>
                                         </div>
                                     </div>
                                     <span class="text-xs font-semibold text-slate-400">Alvo: <span class="text-slate-500 font-normal">${simboloCondicao}</span> R$ ${alerta.preco_alvo.toFixed(2)}</span>
@@ -529,7 +525,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-green-500/20 text-green-400 border-green-500/30 text-center text-sm font-bold shadow-inner";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-center text-sm font-bold shadow-inner";
                         feedback.innerText = `🔒 ${dados.mensagem}`;
                         document.getElementById('formSolicitarCancelamento').reset();
                         document.getElementById('formAutenticarConsulta').reset();
@@ -554,12 +550,12 @@ def pagina_politica_privacidade():
     <head>
         <meta charset="UTF-8">
         <title>Política de Privacidade - Radar B3</title>
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23020617' stroke='%2322c55e' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%234ade80' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%234ade80' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2322c55e'/%3E%3Cpolygon points='16,16 23,9 21,7' fill='%2322c55e' opacity='0.3'/%3E%3C/svg%3E">
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23020617' stroke='%2306b6d4' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2306b6d4'/%3E%3Cpolygon points='16,16 23,9 21,7' fill='%2306b6d4' opacity='0.3'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body class="bg-slate-950 text-slate-300 font-sans p-6 min-h-screen flex items-center justify-center">
+    <body class="bg-cyan-950 text-slate-300 font-sans p-6 min-h-screen flex items-center justify-center">
         <div class="max-w-2xl w-full bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-2xl space-y-4">
-            <h1 class="text-2xl font-bold text-green-400">🔒 Política de Privacidade</h1>
+            <h1 class="text-2xl font-bold text-cyan-400">🔒 Política de Privacidade</h1>
             <p>O <b>Radar B3</b> respeita integralmente as normas de privacidade dos seus usuários. Processamos os e-mails informados de forma estrita e exclusiva para disparar os monitoramentos configurados de forma autônoma.</p>
         </div>
     </body>
