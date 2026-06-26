@@ -114,7 +114,7 @@ def enviar_email_via_resend(destino, assunto, corpo_texto):
     
     payload = {
         "sender": {
-            "name": "B3 Alerta",
+            "name": "Radar B3",
             "email": EMAIL_REMETENTE
         },
         "to": [{"email": destino}],
@@ -139,9 +139,9 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao: 
         f"📊 Cotação Atual de Mercado: R$ {preco_atual:.2f}\n"
         f"🎯 Seu Preço Alvo: R$ {preco_alvo:.2f}\n"
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
-        f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!"
+        f"O Radar B3 enviará uma mensagem assim que este objetivo for atingido!"
     )
-    enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento {ativo} Ativado!", corpo)
+    enviar_email_via_resend(destino, f"📡 Radar B3: Monitoramento {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao: int):
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == 1 else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
@@ -153,18 +153,18 @@ def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao: int):
         f"Preço Atual de Mercado: R$ {preco_atual:.2f}\n\n"
         f"Este monitoramento foi encerrado e removido do radar dinâmico."
     )
-    enviar_email_via_resend(destino, f"🔔 B3 Alerta: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
+    enviar_email_via_resend(destino, f"🔔 Radar B3: {ativo} atingiu R$ {preco_atual:.2f}!", corpo)
 
 def enviar_email_token_consulta(destino, codigo):
     corpo = (
-        f"🔑 SEU CÓDIGO DE ACESSO — B3 ALERTA\n\n"
+        f"🔑 SEU CÓDIGO DE ACESSO — RADAR B3 \n\n"
         f"Você solicitou a consulta dos seus monitoramentos ativos.\n\n"
         f"Utilize o código de segurança abaixo no site para carregar a sua lista de robôs em tempo real:\n"
         f"👉 {codigo} 👈\n\n"
         f"Após inserir este código, você poderá selecionar individualmente quais alertas deseja manter ou desativar.\n"
         f"Se você não solicitou este acesso, apenas ignore este e-mail."
     )
-    enviar_email_via_resend(destino, "🔒 Código de Acesso - B3 Alerta", corpo)
+    enviar_email_via_resend(destino, "🔒 Código de Acesso - Radar B3", corpo)
 
 def obter_preco_interno(ativo_nome: str) -> float:
     nome_ativo = ativo_nome.strip().upper()
@@ -222,7 +222,7 @@ def pagina_inicial():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>B3 Alerta - Monitorando Ativos</title>
+        <title>Radar B3 - Monitorando Ativos</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
@@ -231,7 +231,7 @@ def pagina_inicial():
         <div class="flex-grow flex items-center justify-center w-full">
             <div class="max-w-xl w-full bg-slate-900 p-8 rounded-2xl shadow-2xl border border-slate-800 my-8">
                 <div class="text-center mb-6">
-                    <h1 class="text-3xl font-extrabold text-green-400">📡 B3 Alerta</h1>
+                    <h1 class="text-3xl font-extrabold text-green-400">📡 Radar B3</h1>
                     <p class="text-slate-400 mt-2 text-sm">Monitoramento em tempo real.</p>
                 </div>
 
@@ -322,7 +322,7 @@ def pagina_inicial():
         </div>
 
         <footer class="w-full text-center py-4 border-t border-slate-900 bg-slate-950/60 text-xs text-slate-500">
-            <p>&copy; 2026 B3 Alerta. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
+            <p>&copy; 2026 Radar B3. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
             <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-green-400 underline transition">Política de Privacidade</a></p>
         </footer>
 
@@ -550,11 +550,11 @@ def pagina_politica_privacidade():
     html_politica = """
     <!DOCTYPE html>
     <html lang="pt-BR">
-    <head><meta charset="UTF-8"><title>Política de Privacidade - B3 Alerta</title><script src="https://cdn.tailwindcss.com"></script></head>
+    <head><meta charset="UTF-8"><title>Política de Privacidade - Radar B3</title><script src="https://cdn.tailwindcss.com"></script></head>
     <body class="bg-slate-950 text-slate-300 font-sans p-6 min-h-screen flex items-center justify-center">
         <div class="max-w-2xl w-full bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-2xl space-y-4">
             <h1 class="text-2xl font-bold text-green-400">🔒 Política de Privacidade</h1>
-            <p>O <b>B3 Alerta</b> respeita integralmente as normas de privacidade dos seus usuários. Processamos os e-mails informados de forma estrita e exclusiva para disparar os monitoramentos configurados de forma autônoma.</p>
+            <p>O <b>Radar B3</b> respeita integralmente as normas de privacidade dos seus usuários. Processamos os e-mails informados de forma estrita e exclusiva para disparar os monitoramentos configurados de forma autônoma.</p>
         </div>
     </body>
     </html>
