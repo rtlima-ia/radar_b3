@@ -3,7 +3,7 @@ import time
 import random
 import threading
 import re
-from datetime import datetime
+from datetime import datetime, date
 from typing import List
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
@@ -12,7 +12,7 @@ from fastapi import FastAPI, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import yfinance as yf
@@ -76,10 +76,10 @@ class Alerta(Base):
     email = Column(String, index=True, nullable=False)
     ativo = Column(String, index=True, nullable=False)
     preco_alvo = Column(Float, nullable=False)
-    # 🟢 REGRA 2: Campo condicao alterado para numérico (0 = menor, 1 = maior)
+    # Regra 2: Campo condicao como numérico (0 = menor, 1 = maior)
     condicao = Column(Integer, nullable=False)
-    # 🟢 REGRA 1: Incluindo data de inclusão no formato DateTime
-    data_inclusao = Column(DateTime, default=datetime.utcnow, nullable=False)
+    # Regra 1 Ajustada: Salvando estritamente DATE (sem horas e sem timestamp)
+    data_inclusao = Column(Date, default=date.today, nullable=False)
 
 class CodigoCancelamento(Base):
     __tablename__ = "codigos_cancelamento"
@@ -576,7 +576,7 @@ def configuring_alerta(
     email: str = Form(...),
     ativo: str = Form(...),
     preco_alvo: float = Form(...),
-    condicao: int = Form(...), # 🟢 REGRA 2: Recebe o inteiro (0 ou 1) nativo do formulário
+    condicao: int = Form(...), 
     db: Session = Depends(get_db)
 ):
     email_limpo = email.strip().lower()
@@ -588,7 +588,6 @@ def configuring_alerta(
     if preco_atual == 0.0:
         return {"status": "erro", "mensagem": "Falha ao validar cotação do ativo."}
 
-    # novo_alerta usa a data_inclusao gerada automaticamente (datetime.utcnow)
     novo_alerta = Alerta(email=email_limpo, ativo=ticker, preco_alvo=preco_alvo, condicao=condicao)
     db.add(novo_alerta)
     db.commit()
@@ -602,7 +601,7 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo).all()
     
     if not alertas_ativos:
-        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento active para este e-mail."}
+        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
         
     codigo_seguranca = str(random.randint(100000, 999999))
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
@@ -641,7 +640,7 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
             "ativo": a.ativo, 
             "preco_alvo": a.preco_alvo,
             "preco_atual": cotacoes_usuario.get(a.ativo, 0.0),
-            "condicao": a.condicao # Retorna o inteiro (0 ou 1) diretamente para o Javascript
+            "condicao": a.condicao 
         })
         
     return {"status": "sucesso", "alertas": retorno_alertas}
@@ -692,7 +691,6 @@ def loop_monitoramento_b3():
                         continue
 
                     disparar = False
-                    # 🟢 REGRA 2: Validação numérica do Robô (1 = maior ou igual, 0 = menor ou igual)
                     if alerta.condicao == 1 and preco_atual >= alerta.preco_alvo:
                         disparar = True
                     elif alerta.condicao == 0 and preco_atual <= alerta.preco_alvo:
