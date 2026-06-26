@@ -11,6 +11,7 @@ import requests
 from fastapi import FastAPI, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -22,9 +23,14 @@ import yfinance as yf
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./radar_b3.db")
 
+# Ajuste automático de compatibilidade para conexões PostgreSQL/Neon
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 engine = create_engine(
     DATABASE_URL, 
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
+    pool_pre_ping=True
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -44,6 +50,7 @@ async def lifespan(app_fastapi: FastAPI):
 
 app = FastAPI(title="B3 Alerta - Radar Profissional", lifespan=lifespan)
 
+# Configurações de CORS e Segurança para evitar "Erro de Rede Proxy"
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -51,6 +58,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 CACHE_COTCOES = {}
 CACHE_EXPIRACAO_SEGUNDOS = 60  
@@ -68,9 +76,9 @@ class Alerta(Base):
     email = Column(String, index=True, nullable=False)
     ativo = Column(String, index=True, nullable=False)
     preco_alvo = Column(Float, nullable=False)
-    # 🟢 ALTERAÇÃO 2: Campo condicao alterado para numérico (0 = menor, 1 = maior)
+    # 🟢 REGRA 2: Campo condicao alterado para numérico (0 = menor, 1 = maior)
     condicao = Column(Integer, nullable=False)
-    # 🟢 ALTERAÇÃO 1: Incluindo data de inclusão no formato DateTime
+    # 🟢 REGRA 1: Incluindo data de inclusão no formato DateTime
     data_inclusao = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 class CodigoCancelamento(Base):
@@ -124,7 +132,6 @@ def enviar_email_via_resend(destino, assunto, corpo_texto):
         print(f"💥 Erro na conexão com a API do Brevo: {e}")
 
 def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao: int):
-    # Condição tratada numericamente: 1 = maior, 0 = menor
     texto_condicao = "MAIOR ou igual a" if condicao == 1 else "MENOR ou igual a"
     corpo = (
         f"✅ MONITORAMENTO CONFIGURADO COM SUCESSO!\n\n"
@@ -132,12 +139,11 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao: 
         f"📊 Cotação Atual de Mercado: R$ {preco_atual:.2f}\n"
         f"🎯 Seu Preço Alvo: R$ {preco_alvo:.2f}\n"
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
-        f"O B3 Alerta enviará uma message assim que este objetivo for atingido!"
+        f"O B3 Alerta enviará uma mensagem assim que este objetivo for atingido!"
     )
     enviar_email_via_resend(destino, f"📡 B3 Alerta: Monitoramento {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao: int):
-    # Condição tratada numericamente: 1 = maior, 0 = menor
     acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == 1 else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
     corpo = (
         f"🚨 ALVO ATINGIDO!\n\n"
@@ -359,7 +365,7 @@ def pagina_inicial():
                 executarSugestaoCondicao();
             });
 
-            function ejecutarSugestaoCondicao() {
+            function executarSugestaoCondicao() {
                 if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
                 selectCondicao.value = precoLimpoParaEnvio > valorCotacaoAtual ? "1" : "0";
             }
@@ -570,7 +576,7 @@ def configuring_alerta(
     email: str = Form(...),
     ativo: str = Form(...),
     preco_alvo: float = Form(...),
-    condicao: int = Form(...), # 🟢 ALTERAÇÃO 2: Recebendo o valor inteiro (0 ou 1) diretamente do form
+    condicao: int = Form(...), # 🟢 REGRA 2: Recebe o inteiro (0 ou 1) nativo do formulário
     db: Session = Depends(get_db)
 ):
     email_limpo = email.strip().lower()
@@ -582,7 +588,7 @@ def configuring_alerta(
     if preco_atual == 0.0:
         return {"status": "erro", "mensagem": "Falha ao validar cotação do ativo."}
 
-    # novo_alerta usará a data_inclusao gerada automaticamente (datetime.utcnow)
+    # novo_alerta usa a data_inclusao gerada automaticamente (datetime.utcnow)
     novo_alerta = Alerta(email=email_limpo, ativo=ticker, preco_alvo=preco_alvo, condicao=condicao)
     db.add(novo_alerta)
     db.commit()
@@ -596,7 +602,7 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo).all()
     
     if not alertas_ativos:
-        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
+        return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento active para este e-mail."}
         
     codigo_seguranca = str(random.randint(100000, 999999))
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
@@ -635,7 +641,7 @@ def listar_monitoramentos_usuario(email: str = Form(...), codigo: str = Form(...
             "ativo": a.ativo, 
             "preco_alvo": a.preco_alvo,
             "preco_atual": cotacoes_usuario.get(a.ativo, 0.0),
-            "condicao": a.condicao # Retorna o inteiro (0 ou 1) diretamente para o JS tratar a imagem da seta
+            "condicao": a.condicao # Retorna o inteiro (0 ou 1) diretamente para o Javascript
         })
         
     return {"status": "sucesso", "alertas": retorno_alertas}
@@ -686,7 +692,7 @@ def loop_monitoramento_b3():
                         continue
 
                     disparar = False
-                    # 🟢 ALTERAÇÃO 2: Verificação baseada em inteiros (1 = maior ou igual, 0 = menor ou igual)
+                    # 🟢 REGRA 2: Validação numérica do Robô (1 = maior ou igual, 0 = menor ou igual)
                     if alerta.condicao == 1 and preco_atual >= alerta.preco_alvo:
                         disparar = True
                     elif alerta.condicao == 0 and preco_atual <= alerta.preco_alvo:
