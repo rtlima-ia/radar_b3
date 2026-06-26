@@ -35,7 +35,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
-# Mantemos o e-mail original para não quebrar a autenticação da Brevo até você decidir mudar o domínio
 EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alerta@b3alerta.com.br")
 
 @asynccontextmanager
@@ -47,6 +46,7 @@ async def lifespan(app_fastapi: FastAPI):
 
 app = FastAPI(title="Radar B3 - Monitorando Ativos", lifespan=lifespan)
 
+# BLINDAGEM DE PROXY: Permite que qualquer origem acesse as APIs de cotação sem travar
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -138,7 +138,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao: 
     enviar_email_via_resend(destino, f"📡 Radar B3: Monitoramento {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao: int):
-    acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == 1 else "🟢 OPORTUNIDADE DE COMPRA (Preço Basco)"
+    acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == 1 else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
     corpo = (
         f"🚨 ALVO ATINGIDO!\n\n"
         f"O ativo {ativo} atingiu o objetivo configurado.\n\n"
@@ -364,6 +364,7 @@ def pagina_inicial():
                 selectCondicao.value = precoLimpoParaEnvio > valorCotacaoAtual ? "1" : "0";
             }
 
+            // CORREÇÃO CRÍTICA: Usa rotas relativas limpas sem forçar domínios absolutos travados
             inputAtivo.addEventListener('blur', async () => {
                 const ativoVal = inputAtivo.value.trim();
                 if (!ativoVal) return;
@@ -371,8 +372,7 @@ def pagina_inicial():
                 precoTempoReal.innerText = "Buscando...";
                 precoTempoReal.classList.remove('hidden');
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/preco/${ativoVal}`);
+                    const response = await fetch(`/api/preco/${ativoVal}`);
                     const dados = await response.json();
                     if (dados.status === "sucesso" && dados.preco_atual > 0) {
                         valorCotacaoAtual = dados.preco_atual;
@@ -386,7 +386,7 @@ def pagina_inicial():
                     }
                 } catch (err) {
                     precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-red-500";
-                    precoTempoReal.innerText = "Erro de rede proxy";
+                    precoTempoReal.innerText = "Erro de conexão";
                     valorCotacaoAtual = 0;
                 }
             });
@@ -399,8 +399,7 @@ def pagina_inicial():
                 feedback.classList.remove('hidden');
 
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/alerta`, {
+                    const response = await fetch(`/api/alerta`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
@@ -436,8 +435,7 @@ def pagina_inicial():
                 feedback.classList.remove('hidden');
 
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/cancelar/solicitar`, {
+                    const response = await fetch(`/api/cancelar/solicitar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ 'email': document.getElementById('emailCancelamento').value })
@@ -460,8 +458,7 @@ def pagina_inicial():
             document.getElementById('formAutenticarConsulta').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/cancelar/listar`, {
+                    const response = await fetch(`/api/cancelar/listar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ 
@@ -510,8 +507,7 @@ def pagina_inicial():
                 if (idsParaCancelar.length === 0) { alert("Selecione ao menos um item."); return; }
 
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/cancelar/confirmar`, {
+                    const response = await fetch(`/api/cancelar/confirmar`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
@@ -589,7 +585,7 @@ def configuring_alerta(
     if alerta_duplicado:
         return {
             "status": "erro", 
-            "mensagem": f"Você já possui um monitoramento ativo exatamente igual para {ticker} nesta mesma condição e preço alvo!"
+            "mensagem": f"Você já possui um monitoramento active exatamente igual para {ticker} nesta mesma condição e preço alvo!"
         }
 
     preco_atual = obter_preco_interno(ticker)
