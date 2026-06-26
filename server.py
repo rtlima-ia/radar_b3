@@ -128,7 +128,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao: 
     texto_condicao = "MAIOR ou igual a" if condicao == 1 else "MENOR ou igual a"
     corpo = (
         f"✅ MONITORAMENTO CONFIGURADO COM SUCESSO!\n\n"
-        f"Seu robô para o ativo {ativo} está active.\n\n"
+        f"Seu robô para o ativo {ativo} está ativo.\n\n"
         f"📊 Cotação Atual de Mercado: R$ {preco_atual:.2f}\n"
         f"🎯 Seu Preço Alvo: R$ {preco_alvo:.2f}\n"
         f"⚙️ Regra de Disparo: Avisar quando o preço ficar {texto_condicao} R$ {preco_alvo:.2f}\n\n"
@@ -351,8 +351,9 @@ def pagina_inicial():
                 feedback.classList.add('hidden');
             });
 
+            // 🟢 CORREÇÃO: Dupla barra invertida protegida para evitar corrupção de string no Python
             inputPreco.addEventListener('input', (e) => {
-                let value = e.target.value.replace(/\\D/g, "");
+                let value = e.target.value.replace(/\\\\D/g, "");
                 if (value === "") { precoLimpoParaEnvio = 0; e.target.value = ""; return; }
                 precoLimpoParaEnvio = parseFloat(value) / 100;
                 e.target.value = precoLimpoParaEnvio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
