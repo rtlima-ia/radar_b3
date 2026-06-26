@@ -214,7 +214,8 @@ def obter_ads_txt():
 
 @app.get("/", response_class=HTMLResponse)
 def pagina_inicial():
-    html_content = """
+    # 🟢 APLICADO: Transforma a string em raw string (r""") para aceitar a barra nativa do JavaScript sem bugar
+    html_content = r"""
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
@@ -356,9 +357,9 @@ def pagina_inicial():
                 feedback.classList.add('hidden');
             });
 
-            // 🟢 MODIFICADO: Escapando a barra invertida com \\D para evitar quebra de string no Python
+            // 🟢 CORRIGIDO: Agora usa a barra nativa \D perfeitamente graças à raw string do Python
             inputPreco.addEventListener('input', (e) => {
-                let value = e.target.value.replace(/\\\\D/g, "");
+                let value = e.target.value.replace(/\D/g, "");
                 if (value === "") { precoLimpoParaEnvio = 0; e.target.value = ""; return; }
                 precoLimpoParaEnvio = parseFloat(value) / 100;
                 e.target.value = precoLimpoParaEnvio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
