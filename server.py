@@ -216,65 +216,69 @@ def pagina_inicial():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Radar B3 - Monitorando Ativos</title>
-        <!-- 🏦 ITAU 3D: Favicon customizado corporativo em profundidade -->
+        <!-- 🏦 ITAU 3D ADVANCED: Ícone e assinatura visual em volumetria e profundidade -->
         <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23ec7000'/%3E%3Crect x='4' y='4' width='24' height='24' rx='4' fill='%23003366'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23ec7000' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23ffffff'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
-    <!-- 🏦 ITAU 3D: Fundo em Degradê Radial Esférico do Laranja Oficial para simular volumetria e iluminação de estúdio -->
-    <body class="bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#ff8c21] to-[#ec7000] text-white min-h-screen flex flex-col items-center justify-between font-sans p-4 select-none">
+    <!-- 🏦 ITAU 3D ADVANCED: Gradiente linear profundo acentuado por um holofote de luz radial centralizado -->
+    <body class="bg-gradient-to-b from-[#ff7a00] via-[#ec7000] to-[#b34f00] text-white min-h-screen flex flex-col items-center justify-between font-sans p-4 relative overflow-hidden selection:bg-[#ff8c21] selection:text-white">
+        
+        <!-- Ponto de luz tridimensional no topo/centro para gerar profundidade de estúdio -->
+        <div class="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-white/15 rounded-full blur-[120px] pointer-events-none"></div>
 
-        <div class="flex-grow flex items-center justify-center w-full">
-            <!-- 🏦 ITAU 3D: Card em Degradê de Azul Profundo com borda superior iluminada e sombra tripla pesada para efeito 3D real de elevação -->
-            <div class="max-w-xl w-full bg-gradient-to-br from-[#003c77] to-[#002244] p-8 rounded-3xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] border-t border-white/20 border-x border-white/5 my-8 transform transition duration-500 hover:scale-[1.01]">
+        <div class="flex-grow flex items-center justify-center w-full z-10">
+            <!-- 🏦 CARD 3D PREMIUM: Degradê de azul fechado com efeito de vidro reflexivo, borda iluminada (border-t-white/20) e sombra projetada ultra-pesada -->
+            <div class="max-w-xl w-full bg-gradient-to-b from-[#004488] to-[#002244] p-8 rounded-3xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] border-t border-l border-white/20 border-b border-r border-black/40 my-8 backdrop-blur-md transform transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_40px_75px_-20px_rgba(0,0,0,0.7)]">
                 <div class="text-center mb-6">
-                    <h1 class="text-3xl font-black tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">Radar B3</h1>
-                    <p class="text-orange-200 mt-2 text-sm font-medium">Monitoramento inteligente e solidez patrimonial.</p>
+                    <h1 class="text-3xl font-black tracking-tight text-white drop-shadow-[0_3px_6px_rgba(0,0,0,0.5)]">Radar B3</h1>
+                    <p class="text-orange-200 mt-2 text-sm font-medium tracking-wide opacity-90">Monitoramento inteligente e alta performance patrimonial.</p>
                 </div>
 
-                <div class="flex border-b border-white/10 mb-6 bg-black/20 rounded-xl p-1 shadow-inner">
-                    <button id="tabCadastro" class="flex-1 py-2.5 text-sm font-bold text-white bg-white/10 rounded-lg shadow-md focus:outline-none transition-all duration-200">
+                <!-- Abas com efeito de botão físico entalhado (shadow-inner) -->
+                <div class="flex border border-black/30 bg-[#001c3a] rounded-2xl p-1.5 shadow-[inner_0_2px_4px_rgba(0,0,0,0.4)] mb-6">
+                    <button id="tabCadastro" class="flex-1 py-2.5 text-sm font-extrabold text-white bg-gradient-to-b from-white/15 to-white/5 rounded-xl shadow-md border-t border-white/10 focus:outline-none transition-all duration-200">
                         📝 Criar Alerta
                     </button>
-                    <button id="tabCancelamento" class="flex-1 py-2.5 text-sm font-bold text-orange-200/60 focus:outline-none hover:text-white transition-all duration-200">
+                    <button id="tabCancelamento" class="flex-1 py-2.5 text-sm font-extrabold text-orange-200/60 focus:outline-none hover:text-white transition-all duration-200">
                         🔍 Consultar & Cancelar
                     </button>
                 </div>
 
                 <form id="formB3" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
+                        <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1.5 opacity-80">Código do Ativo (ex: PETR4, MXRF11)</label>
                         <div class="relative">
-                            <!-- Inputs com cavidade 3D (shadow-inner) e bordas finas responsivas -->
+                            <!-- Inputs em baixo-relevo profundo para reforçar o visual 3D -->
                             <input type="text" id="ativo" placeholder="Digite e clique fora..." required
-                                class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-white font-bold focus:outline-none focus:border-[#ff8c21] focus:ring-2 focus:ring-[#ff8c21]/20 uppercase transition shadow-inner placeholder-slate-600">
-                            <span id="precoTempoReal" class="absolute right-3 top-3.5 text-xs font-bold text-white hidden"></span>
+                                class="w-full bg-[#00152c] border border-black/40 rounded-xl px-4 py-3.5 text-white font-bold focus:outline-none focus:border-[#ff8c21] focus:ring-4 focus:ring-[#ff8c21]/20 uppercase transition shadow-[inner_0_3px_6px_rgba(0,0,0,0.5)] placeholder-slate-600 text-sm">
+                            <span id="precoTempoReal" class="absolute right-3 top-3.5 text-xs font-black text-white hidden"></span>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Seu E-mail para Alerta</label>
+                        <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1.5 opacity-80">Seu E-mail para Alerta</label>
                         <input type="email" id="email" placeholder="seuemail@exemplo.com" required
-                            class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#ff8c21] focus:ring-2 focus:ring-[#ff8c21]/20 transition shadow-inner placeholder-slate-600">
+                            class="w-full bg-[#00152c] border border-black/40 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-[#ff8c21] focus:ring-4 focus:ring-[#ff8c21]/20 transition shadow-[inner_0_3px_6px_rgba(0,0,0,0.5)] placeholder-slate-600 text-sm">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
+                            <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1.5 opacity-80">Preço Alvo Desejado</label>
                             <input type="text" id="preco" placeholder="R$ 0,00" required
-                                class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#ff8c21] focus:ring-2 focus:ring-[#ff8c21]/20 transition shadow-inner placeholder-slate-600">
+                                class="w-full bg-[#00152c] border border-black/40 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-[#ff8c21] focus:ring-4 focus:ring-[#ff8c21]/20 transition shadow-[inner_0_3px_6px_rgba(0,0,0,0.5)] placeholder-slate-600 text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Me avise quando for:</label>
-                            <select id="condicao" class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-white font-bold focus:outline-none focus:border-[#ff8c21] focus:ring-2 focus:ring-[#ff8c21]/20 transition shadow-inner">
+                            <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1.5 opacity-80">Me avise quando for:</label>
+                            <select id="condicao" class="w-full bg-[#00152c] border border-black/40 rounded-xl px-4 py-3.5 text-white font-bold focus:outline-none focus:border-[#ff8c21] focus:ring-4 focus:ring-[#ff8c21]/20 transition shadow-[inner_0_3px_6px_rgba(0,0,0,0.5)] text-sm">
                                 <option value="1" class="bg-[#002244]">📈 Maior ou Igual</option>
                                 <option value="0" class="bg-[#002244]">📉 Menor ou Igual</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- 🏦 ITAU 3D: Botão com degradê linear descendente, borda de relevo 3D na base e gatilho de compressão mecânica ao clicar (active) -->
-                    <button type="submit" class="w-full bg-gradient-to-b from-[#ff8c21] to-[#ec7000] hover:from-[#ff9d42] hover:to-[#f57500] text-white font-black py-3.5 px-4 rounded-xl transition duration-150 transform active:translate-y-0.5 border-b-4 border-orange-800 active:border-b-0 shadow-lg shadow-black/30 tracking-wide text-center">
+                    <!-- BOTÃO MECÂNICO 3D: Degradê brilhante, relevo na base e animação física real de compressão ao ser pressionado -->
+                    <button type="submit" class="w-full bg-gradient-to-b from-[#ff912b] via-[#ec7000] to-[#cb6000] hover:from-[#ff9c3f] hover:to-[#db6800] text-white font-black py-4 px-4 rounded-xl transition duration-100 transform active:scale-[0.99] active:translate-y-0.5 border-b-[5px] border-orange-900 active:border-b-0 shadow-[0_6px_15px_rgba(0,0,0,0.4)] tracking-wide uppercase text-sm">
                         Ativar Monitoramento 🚀
                     </button>
                 </form>
@@ -282,22 +286,22 @@ def pagina_inicial():
                 <div id="containerCancelamento" class="space-y-4 hidden">
                     <form id="formSolicitarCancelamento" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Seu E-mail Cadastrado</label>
+                            <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1 opacity-80">Seu E-mail Cadastrado</label>
                             <input type="email" id="emailCancelamento" placeholder="seuemail@exemplo.com" required
-                                class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 shadow-inner">
+                                class="w-full bg-[#00152c] border border-black/40 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-blue-400 shadow-[inner_0_3px_6px_rgba(0,0,0,0.5)] text-sm">
                         </div>
-                        <button type="submit" class="w-full bg-gradient-to-b from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 text-white font-bold py-3 px-4 rounded-xl border border-white/10 transition duration-150 active:translate-y-0.5 text-xs uppercase tracking-wider shadow-md">
+                        <button type="submit" class="w-full bg-gradient-to-b from-white/10 to-white/5 hover:from-white/15 hover:to-white/10 text-white font-bold py-3 px-4 rounded-xl border border-white/10 transition duration-150 active:translate-y-0.5 text-xs uppercase tracking-wider shadow-md">
                             Solicitar Código de Consulta 🔑
                         </button>
                     </form>
 
                     <form id="formAutenticarConsulta" class="space-y-4 hidden border-t border-white/10 pt-4">
                         <div>
-                            <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Insira o Código de 6 Dígitos</label>
+                            <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1 opacity-80">Insira o Código de 6 Dígitos</label>
                             <input type="text" id="codigoSeguranca" placeholder="Ex: 123456" maxlength="6" required
-                                class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-[#ff8c21] shadow-inner">
+                                class="w-full bg-[#00152c] border border-black/40 rounded-xl px-4 py-3.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-[#ff8c21] shadow-[inner_0_3px_6px_rgba(0,0,0,0.5)]">
                         </div>
-                        <button type="submit" class="w-full bg-gradient-to-b from-[#ff8c21] to-[#ec7000] text-white font-black py-3.5 px-4 rounded-xl transition duration-150 border-b-4 border-orange-800 active:border-b-0 active:translate-y-0.5 shadow-lg">
+                        <button type="submit" class="w-full bg-gradient-to-b from-[#ff912b] via-[#ec7000] to-[#cb6000] text-white font-black py-4 px-4 rounded-xl transition duration-100 border-b-[5px] border-orange-900 active:border-b-0 active:translate-y-0.5 shadow-lg uppercase text-sm tracking-wide">
                             Buscar Meus Monitoramentos 🔍
                         </button>
                     </form>
@@ -311,7 +315,7 @@ def pagina_inicial():
                     </div>
                 </div>
 
-                <div id="feedback" class="mt-6 hidden p-5 rounded-xl border shadow-inner transition-all duration-300"></div>
+                <div id="feedback" class="mt-6 hidden p-5 rounded-xl border shadow-[inner_0_2px_4px_rgba(0,0,0,0.3)] transition-all duration-300 text-sm font-medium"></div>
 
                 <div class="mt-6 pt-4 border-t border-white/5 flex justify-center">
                     <ins class="adsbygoogle" style="display:block; min-width:300px; max-width:100%;" data-ad-client="ca-pub-9200830725654504" data-ad-slot="0000000000" data-ad-format="auto" data-full-width-responsive="true"></ins>
@@ -320,9 +324,9 @@ def pagina_inicial():
             </div>
         </div>
 
-        <footer class="w-full text-center py-4 border-t border-white/10 bg-black/10 text-xs text-orange-100/60 backdrop-blur-sm z-10">
+        <footer class="w-full text-center py-4 border-t border-white/10 bg-black/15 text-xs text-orange-100/70 backdrop-blur-md z-10">
             <p>&copy; 2026 Radar B3. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
-            <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-white underline transition">Política de Privacidade</a></p>
+            <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-white underline transition-all">Política de Privacidade</a></p>
         </footer>
 
         <script>
@@ -341,16 +345,16 @@ def pagina_inicial():
             let precoLimpoParaEnvio = 0;
 
             tabCadastro.addEventListener('click', () => {
-                tabCadastro.className = "flex-1 py-2.5 text-sm font-bold text-white bg-white/10 rounded-lg shadow-md focus:outline-none transition-all duration-200";
-                tabCancelamento.className = "flex-1 py-2.5 text-sm font-bold text-orange-200/60 focus:outline-none hover:text-white transition-all duration-200";
+                tabCadastro.className = "flex-1 py-2.5 text-sm font-extrabold text-white bg-gradient-to-b from-white/15 to-white/5 rounded-xl shadow-md border-t border-white/10 focus:outline-none transition-all duration-200";
+                tabCancelamento.className = "flex-1 py-2.5 text-sm font-extrabold text-orange-200/60 focus:outline-none hover:text-white transition-all duration-200";
                 formB3.classList.remove('hidden');
                 containerCancelamento.classList.add('hidden');
                 feedback.classList.add('hidden');
             });
 
             tabCancelamento.addEventListener('click', () => {
-                tabCancelamento.className = "flex-1 py-2.5 text-sm font-bold text-white bg-white/10 rounded-lg shadow-md focus:outline-none transition-all duration-200";
-                tabCadastro.className = "flex-1 py-2.5 text-sm font-bold text-orange-200/60 focus:outline-none hover:text-white transition-all duration-200";
+                tabCancelamento.className = "flex-1 py-2.5 text-sm font-extrabold text-white bg-gradient-to-b from-white/15 to-white/5 rounded-xl shadow-md border-t border-white/10 focus:outline-none transition-all duration-200";
+                tabCadastro.className = "flex-1 py-2.5 text-sm font-extrabold text-orange-200/60 focus:outline-none hover:text-white transition-all duration-200";
                 formB3.classList.add('hidden');
                 containerCancelamento.classList.remove('hidden');
                 feedback.classList.add('hidden');
@@ -381,11 +385,11 @@ def pagina_inicial():
                     const dados = await response.json();
                     if (dados.status === "sucesso" && dados.preco_atual > 0) {
                         valorCotacaoAtual = dados.preco_atual;
-                        precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-bold text-white bg-[#ec7000] px-2.5 py-0.5 rounded-lg shadow";
+                        precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-black text-white bg-[#ec7000] px-2.5 py-0.5 rounded-lg shadow-md border-t border-white/20 animate-none";
                         precoTempoReal.innerText = `R$ ${valorCotacaoAtual.toFixed(2)}`;
                         executarSugestaoCondicao();
                     } else {
-                        precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-bold text-red-300";
+                        precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-bold text-red-300 bg-red-950/40 px-2 py-0.5 rounded-lg border border-red-500/20";
                         precoTempoReal.innerText = "Ausente";
                         valorCotacaoAtual = 0;
                     }
@@ -417,7 +421,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#001833] border-white/10 text-left space-y-3 shadow-inner";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#00152c] border-white/10 text-left space-y-3 shadow-inner";
                         feedback.innerHTML = `
                             <div class="border-b border-white/10 pb-2"><span class="text-base font-bold text-white block">🎉 MONITORAMENTO ATIVADO</span></div>
                             <p class="text-sm text-orange-100">O robô está em operação. Destino: <span class="text-white underline font-bold">${dados.email}</span></p>
@@ -449,7 +453,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#001833] text-white border-white/10 text-center text-sm font-medium shadow-inner";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#00152c] text-white border-white/10 text-center text-sm font-medium shadow-inner";
                         feedback.innerText = dados.mensagem;
                         document.getElementById('formAutenticarConsulta').classList.remove('hidden');
                     } else {
@@ -484,7 +488,7 @@ def pagina_inicial():
                             const simboloCondicao = Number(alerta.condicao) === 1 ? "📈 ≥" : "📉 ≤";
                             
                             const itemHtml = `
-                                <label class="flex items-center justify-between p-3 bg-[#001833] rounded-xl border border-white/5 hover:border-white/10 cursor-pointer transition shadow-sm">
+                                <label class="flex items-center justify-between p-3.5 bg-[#00152c] rounded-xl border border-white/5 hover:border-white/10 cursor-pointer transition shadow-md">
                                     <div class="flex items-center gap-3">
                                         <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded-md accent-[#ec7000] checkbox-alerta-cancelar shadow-inner">
                                         <div class="flex flex-col">
@@ -527,7 +531,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#001833] text-white border-white/10 text-center text-sm font-bold shadow-inner uppercase tracking-wider shadow-inner";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#00152c] text-white border-white/10 text-center text-sm font-bold shadow-inner uppercase tracking-wider";
                         feedback.innerText = `🔒 ${dados.mensagem}`;
                         document.getElementById('formSolicitarCancelamento').reset();
                         document.getElementById('formAutenticarConsulta').reset();
