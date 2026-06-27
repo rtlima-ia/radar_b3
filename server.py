@@ -294,7 +294,7 @@ def pagina_inicial():
                                 class="w-full bg-[#001224] border border-white/5 rounded-xl px-4 py-3.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-[#ff8c21]">
                         </div>
                         <button type="submit" class="w-full bg-gradient-to-b from-[#ff912b] to-[#ec7000] text-white font-black py-4 px-4 rounded-xl transition duration-100 shadow-md uppercase text-sm tracking-wide">
-                            Buscar Meus Monitoramentos 🔍
+                            Buscar Monitoramentos 🔍
                         </button>
                     </form>
 
