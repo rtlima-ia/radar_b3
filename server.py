@@ -216,23 +216,23 @@ def pagina_inicial():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Radar B3 - Monitorando Ativos</title>
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23050505' stroke='%23d946ef' stroke-width='2.5'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%23f472b6' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%23f472b6' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23d946ef'/%3E%3Cpolygon points='16,16 23,9 21,7' fill='%23d946ef' opacity='0.25'/%3E%3C/svg%3E">
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23000000' stroke='%2322d3ee' stroke-width='2.5'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%2367e8f9' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2322d3ee'/%3E%3Cpolygon points='16,16 23,9 21,7' fill='%2322d3ee' opacity='0.3'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
-    <body class="bg-neutral-950 text-neutral-100 min-h-screen flex flex-col items-center justify-between font-sans p-4 relative overflow-x-hidden">
+    <body class="bg-black text-neutral-100 min-h-screen flex flex-col items-center justify-between font-sans p-4 relative overflow-x-hidden">
         
-        <div class="absolute top-[-30%] left-[-20%] w-[600px] h-[600px] bg-fuchsia-900/10 rounded-full blur-[150px] pointer-events-none"></div>
+        <div class="absolute top-[-25%] left-[-15%] w-[550px] h-[550px] bg-cyan-950/20 rounded-full blur-[140px] pointer-events-none"></div>
 
         <div class="flex-grow flex items-center justify-center w-full z-10">
-            <div class="max-w-xl w-full bg-[#0c0714] p-8 rounded-2xl shadow-2xl border border-fuchsia-500/20 my-8 backdrop-blur-md">
+            <div class="max-w-xl w-full bg-neutral-900/90 p-8 rounded-2xl shadow-2xl border border-cyan-400/20 my-8 backdrop-blur-md">
                 <div class="text-center mb-6">
-                    <h1 class="text-3xl font-black text-fuchsia-400 tracking-wider uppercase">📡 Radar B3</h1>
-                    <p class="text-neutral-400 mt-2 text-xs font-bold uppercase tracking-widest">Monitoramento Cyberpunk.</p>
+                    <h1 class="text-3xl font-black text-cyan-400 tracking-wider uppercase">📡 Radar B3</h1>
+                    <p class="text-neutral-400 mt-2 text-xs font-bold uppercase tracking-widest">Energia Pura e Monitoramento.</p>
                 </div>
 
-                <div class="flex border-b border-neutral-900 mb-6">
-                    <button id="tabCadastro" class="flex-1 pb-3 text-sm font-black text-fuchsia-400 border-b-2 border-fuchsia-400 focus:outline-none transition uppercase tracking-wider">
+                <div class="flex border-b border-neutral-800 mb-6">
+                    <button id="tabCadastro" class="flex-1 pb-3 text-sm font-black text-cyan-400 border-b-2 border-cyan-400 focus:outline-none transition uppercase tracking-wider">
                         Criar Alerta
                     </button>
                     <button id="tabCancelamento" class="flex-1 pb-3 text-sm font-black text-neutral-600 focus:outline-none hover:text-neutral-400 transition uppercase tracking-wider">
@@ -245,33 +245,33 @@ def pagina_inicial():
                         <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
                         <div class="relative">
                             <input type="text" id="ativo" placeholder="Digite e clique fora..." required
-                                class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white font-bold focus:outline-none focus:border-fuchsia-500 uppercase transition placeholder-neutral-800">
-                            <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-black text-fuchsia-400 hidden"></span>
+                                class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white font-bold focus:outline-none focus:border-cyan-400 uppercase transition placeholder-neutral-800">
+                            <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-black text-cyan-400 hidden"></span>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Seu E-mail para Alerta</label>
                         <input type="email" id="email" placeholder="seuemail@exemplo.com" required
-                            class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-fuchsia-500 transition placeholder-neutral-800">
+                            class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-cyan-400 transition placeholder-neutral-800">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
                             <input type="text" id="preco" placeholder="R$ 0,00" required
-                                class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-fuchsia-500 transition placeholder-neutral-800">
+                                class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-cyan-400 transition placeholder-neutral-800">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Me avise quando for:</label>
-                            <select id="condicao" class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white font-bold focus:outline-none focus:border-fuchsia-500 transition">
+                            <select id="condicao" class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white font-bold focus:outline-none focus:border-cyan-400 transition">
                                 <option value="1">📈 Maior ou Igual</option>
                                 <option value="0">📉 Menor ou Igual</option>
                             </select>
                         </div>
                     </div>
 
-                    <button type="submit" class="w-full bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-black py-3 px-4 rounded-lg transition duration-200 uppercase tracking-wider shadow-lg shadow-fuchsia-500/10">
+                    <button type="submit" class="w-full bg-cyan-400 hover:bg-cyan-500 text-black font-black py-3 px-4 rounded-lg transition duration-200 uppercase tracking-wider shadow-lg shadow-cyan-400/10">
                         Ativar Monitoramento 🚀
                     </button>
                 </form>
@@ -292,9 +292,9 @@ def pagina_inicial():
                         <div>
                             <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Insira o Código de 6 Dígitos</label>
                             <input type="text" id="codigoSeguranca" placeholder="Ex: 123456" maxlength="6" required
-                                class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-center text-xl font-black tracking-widest text-white focus:outline-none focus:border-fuchsia-500">
+                                class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-center text-xl font-black tracking-widest text-white focus:outline-none focus:border-cyan-400">
                         </div>
-                        <button type="submit" class="w-full bg-fuchsia-600 text-white font-black py-3 px-4 rounded-lg transition duration-200 shadow-lg uppercase tracking-wider">
+                        <button type="submit" class="w-full bg-cyan-400 text-black font-black py-3 px-4 rounded-lg transition duration-200 shadow-lg uppercase tracking-wider">
                             Buscar Meus Monitoramentos 🔍
                         </button>
                     </form>
@@ -319,7 +319,7 @@ def pagina_inicial():
 
         <footer class="w-full text-center py-4 border-t border-neutral-900 bg-neutral-950/60 text-xs text-neutral-500">
             <p>&copy; 2026 Radar B3. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
-            <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-fuchsia-400 underline transition">Política de Privacidade</a></p>
+            <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-cyan-400 underline transition">Política de Privacidade</a></p>
         </footer>
 
         <script>
@@ -338,16 +338,16 @@ def pagina_inicial():
             let precoLimpoParaEnvio = 0;
 
             tabCadastro.addEventListener('click', () => {
-                tabCadastro.className = "flex-1 pb-3 text-sm font-black text-fuchsia-400 border-b-2 border-fuchsia-400 focus:outline-none uppercase tracking-wider";
-                tabCancelamento.className = "flex-1 pb-3 text-sm font-black text-neutral-600 focus:outline-none hover:text-neutral-400 uppercase tracking-wider";
+                tabCadastro.className = "flex-1 pb-3 text-sm font-black text-cyan-400 border-b-2 border-cyan-400 focus:outline-none uppercase tracking-wider";
+                tabCancelamento.className = "flex-1 pb-3 text-sm font-black text-neutral-500 focus:outline-none hover:text-neutral-400 uppercase tracking-wider";
                 formB3.classList.remove('hidden');
                 containerCancelamento.classList.add('hidden');
                 feedback.classList.add('hidden');
             });
 
             tabCancelamento.addEventListener('click', () => {
-                tabCancelamento.className = "flex-1 pb-3 text-sm font-black text-fuchsia-400 border-b-2 border-fuchsia-400 focus:outline-none uppercase tracking-wider";
-                tabCadastro.className = "flex-1 pb-3 text-sm font-black text-neutral-600 focus:outline-none hover:text-neutral-400 uppercase tracking-wider";
+                tabCancelamento.className = "flex-1 pb-3 text-sm font-black text-cyan-400 border-b-2 border-cyan-400 focus:outline-none uppercase tracking-wider";
+                tabCadastro.className = "flex-1 pb-3 text-sm font-black text-neutral-500 focus:outline-none hover:text-neutral-400 uppercase tracking-wider";
                 formB3.classList.add('hidden');
                 containerCancelamento.classList.remove('hidden');
                 feedback.classList.add('hidden');
@@ -378,7 +378,7 @@ def pagina_inicial():
                     const dados = await response.json();
                     if (dados.status === "sucesso" && dados.preco_atual > 0) {
                         valorCotacaoAtual = dados.preco_atual;
-                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-black text-fuchsia-400";
+                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-black text-cyan-400";
                         precoTempoReal.innerText = `R$ ${valorCotacaoAtual.toFixed(2)}`;
                         executarSugestaoCondicao();
                     } else {
@@ -414,10 +414,10 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-black border-neutral-900 text-left space-y-3 shadow-inner border-fuchsia-900/40";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-black border-neutral-900 text-left space-y-3 shadow-inner border-cyan-900/40";
                         feedback.innerHTML = `
-                            <div class="border-b border-neutral-800 pb-2"><span class="text-base font-black text-fuchsia-400 block">⚡ SISTEMA ATIVADO</span></div>
-                            <p class="text-xs font-bold text-white uppercase tracking-wider">O robô está em operação. Destino: <span class="text-fuchsia-400 underline">${dados.email}</span></p>
+                            <div class="border-b border-neutral-800 pb-2"><span class="text-base font-black text-cyan-400 block">⚡ MONITORAMENTO ATIVADO</span></div>
+                            <p class="text-xs font-bold text-white uppercase tracking-wider">O robô está operando em tempo real. Destino: <span class="text-cyan-400 underline">${dados.email}</span></p>
                         `;
                         formB3.reset();
                         precoTempoReal.classList.add('hidden');
@@ -483,10 +483,10 @@ def pagina_inicial():
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3 bg-black rounded-lg border border-neutral-800 hover:border-neutral-700 cursor-pointer transition">
                                     <div class="flex items-center gap-3">
-                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-fuchsia-400 checkbox-alerta-cancelar">
+                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-cyan-400 checkbox-alerta-cancelar">
                                         <div class="flex flex-col">
                                             <span class="font-black text-white uppercase tracking-wider">${alerta.ativo}</span>
-                                            <span class="text-[10px] text-neutral-500 font-bold uppercase">Mercado: <b class="text-fuchsia-400">${precoAtualTexto}</b></span>
+                                            <span class="text-[10px] text-neutral-500 font-bold uppercase">Mercado: <b class="text-cyan-400">${precoAtualTexto}</b></span>
                                         </div>
                                     </div>
                                     <span class="text-xs font-black text-neutral-400">Alvo: <span class="text-neutral-600 font-normal">${simboloCondicao}</span> R$ ${alerta.preco_alvo.toFixed(2)}</span>
@@ -524,7 +524,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-fuchsia-400/20 text-fuchsia-400 border-fuchsia-400/30 text-center text-sm font-black shadow-inner uppercase tracking-wider";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-cyan-400/20 text-cyan-400 border-cyan-400/30 text-center text-sm font-black shadow-inner uppercase tracking-wider";
                         feedback.innerText = `🔒 ${dados.mensagem}`;
                         document.getElementById('formSolicitarCancelamento').reset();
                         document.getElementById('formAutenticarConsulta').reset();
@@ -549,12 +549,12 @@ def pagina_politica_privacidade():
     <head>
         <meta charset="UTF-8">
         <title>Política de Privacidade - Radar B3</title>
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23050505' stroke='%23d946ef' stroke-width='2.5'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%23f472b6' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23d946ef'/%3E%3C/svg%3E">
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23000000' stroke='%2322d3ee' stroke-width='2.5'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%2322d3ee' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%2322d3ee'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body class="bg-neutral-950 text-neutral-300 font-sans p-6 min-h-screen flex items-center justify-center">
-        <div class="max-w-2xl w-full bg-[#0c0714] p-8 rounded-2xl border border-neutral-800 shadow-2xl space-y-4">
-            <h1 class="text-2xl font-black text-fuchsia-400 uppercase tracking-wider">🔒 Política de Privacidade</h1>
+    <body class="bg-black text-neutral-300 font-sans p-6 min-h-screen flex items-center justify-center">
+        <div class="max-w-2xl w-full bg-neutral-900 p-8 rounded-2xl border border-neutral-800 shadow-2xl space-y-4">
+            <h1 class="text-2xl font-black text-cyan-400 uppercase tracking-wider">🔒 Política de Privacidade</h1>
             <p class="text-xs uppercase font-bold tracking-wider text-neutral-400">O <b>Radar B3</b> respeita integralmente as normas de privacidade dos seus usuários. Processamos os e-mails informados de forma estrita e exclusiva para disparar os monitoramentos configurados de forma autônoma.</p>
         </div>
     </body>
