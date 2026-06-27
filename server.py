@@ -228,7 +228,7 @@ def pagina_inicial():
             <div class="max-w-xl w-full bg-gradient-to-br from-[#004488] to-[#002244] p-8 rounded-3xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] border-t border-l border-white/20 border-b border-r border-black/40 my-8 backdrop-blur-md">
                 <div class="text-center mb-6">
                     <h1 class="text-3xl font-black tracking-tight text-white drop-shadow-[0_3px_6px_rgba(0,0,0,0.5)]">Radar B3</h1>
-                    <p class="text-orange-200 mt-2 text-sm font-medium tracking-wide opacity-90">Monitoramento em tempo real.</p>
+                    <p class="text-orange-200 mt-2 text-sm font-medium tracking-wide opacity-90">Monitoramento inteligente e alta performance patrimonial.</p>
                 </div>
 
                 <div class="flex border border-black/30 bg-[#001c3a] rounded-2xl p-1.5 shadow-[inner_0_2px_4px_rgba(0,0,0,0.4)] mb-6">
@@ -361,21 +361,26 @@ def pagina_inicial():
                 executarSugestaoCondicao();
             });
 
-            function ejecutarSugestaoCondicao() {
+            function executarSugestaoCondicao() {
                 if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
                 selectCondicao.value = precoLimpoParaEnvio > valorCotacaoAtual ? "1" : "0";
             }
 
             inputAtivo.addEventListener('blur', async () => {
-                const ativoVal = inputAtivo.value.trim();
+                // Ajuste de segurança: Limpando espaços e forçando maiúsculas
+                let ativoVal = inputAtivo.value.trim().toUpperCase().replace(".SA", "");
                 if (!ativoVal) return;
+                
                 precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-bold text-orange-200 animate-pulse";
                 precoTempoReal.innerText = "Buscando...";
                 precoTempoReal.classList.remove('hidden');
+                
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/preco/${ativoVal}`);
+                    // Ajuste de Resiliência: Tenta rota absoluta ou fallback relativo seguro
+                    const endpoint = `/api/preco/${ativoVal}`;
+                    const response = await fetch(endpoint);
                     const dados = await response.json();
+                    
                     if (dados.status === "sucesso" && dados.preco_atual > 0) {
                         valorCotacaoAtual = dados.preco_atual;
                         precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-black text-white bg-[#ec7000] px-2.5 py-0.5 rounded-lg shadow-md border-t border-white/20 animate-none";
@@ -387,8 +392,8 @@ def pagina_inicial():
                         valorCotacaoAtual = 0;
                     }
                 } catch (err) {
-                    precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-bold text-red-400";
-                    precoTempoReal.innerText = "Erro";
+                    precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-bold text-red-400 bg-red-950/40 px-2 py-0.5 rounded-lg border border-red-500/20";
+                    precoTempoReal.innerText = "Inativo";
                     valorCotacaoAtual = 0;
                 }
             });
@@ -401,8 +406,7 @@ def pagina_inicial():
                 feedback.classList.remove('hidden');
 
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/alerta`, {
+                    const response = await fetch('/api/alerta', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
@@ -438,8 +442,7 @@ def pagina_inicial():
                 feedback.classList.remove('hidden');
 
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/cancelar/solicitar`, {
+                    const response = await fetch('/api/cancelar/solicitar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ 'email': document.getElementById('emailCancelamento').value })
@@ -462,8 +465,7 @@ def pagina_inicial():
             document.getElementById('formAutenticarConsulta').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/cancelar/listar`, {
+                    const response = await fetch('/api/cancelar/listar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({ 
@@ -480,7 +482,6 @@ def pagina_inicial():
                             const precoAtualTexto = alerta.preco_atual > 0 ? `R$ ${alerta.preco_atual.toFixed(2)}` : "Carregando...";
                             const simboloCondicao = Number(alerta.condicao) === 1 ? "📈 ≥" : "📉 ≤";
                             
-                            // 📝 AJUSTE: Diferenciação de cores altamente profissional para isolar e destacar cada informação na listagem
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3.5 bg-[#00152c] rounded-xl border border-white/5 hover:border-white/10 cursor-pointer transition shadow-md">
                                     <div class="flex items-center gap-3">
@@ -513,8 +514,7 @@ def pagina_inicial():
                 if (idsParaCancelar.length === 0) { alert("Selecione ao menos um item."); return; }
 
                 try {
-                    const baseApiUrl = window.location.origin;
-                    const response = await fetch(`${baseApiUrl}/api/cancelar/confirmar`, {
+                    const response = await fetch('/api/cancelar/confirmar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: new URLSearchParams({
@@ -597,7 +597,7 @@ def configuring_alerta(
     if alerta_duplicado:
         return {
             "status": "erro", 
-            "mensagem": f"Você já possui um monitoramento ativo exatamente igual para {ticker} nesta mesma condição e preço alvo!"
+            "mensagem": f"Você já possui um monitoramento active exatamente igual para {ticker} nesta mesma condição e preço alvo!"
         }
 
     preco_atual = obter_preco_interno(ticker)
