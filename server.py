@@ -228,7 +228,7 @@ def pagina_inicial():
             <div class="max-w-xl w-full bg-gradient-to-b from-[#003366] to-[#001c3a] p-8 rounded-2xl shadow-lg border border-white/10 my-8">
                 <div class="text-center mb-6">
                     <h1 class="text-3xl font-black tracking-tight text-white">Radar B3</h1>
-                    <p class="text-orange-200 mt-2 text-sm font-medium tracking-wide">Ferramenta gratuita de monitoramento de ativos da Bolsa de Valores brasileira</p>
+                    <p class="text-orange-200 mt-2 text-sm font-medium tracking-wide">Ferramenta gratuita de monitoramento de ativos em tempo real</p>
                 </div>
 
                 <div class="flex bg-[#001428] rounded-xl p-1 mb-6 border border-white/5">
