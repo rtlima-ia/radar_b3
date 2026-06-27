@@ -216,69 +216,65 @@ def pagina_inicial():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Radar B3 - Monitorando Ativos</title>
-        <!-- ✨ TREND: Ícone Minimalista Monocromático de Alta Fidelidade (Estilo Apple / Ultra Luxury) -->
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23050505' stroke='%23ffffff' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%23e5e5e5' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%23a3a3a3' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23ffffff'/%3E%3C/svg%3E">
+        <!-- 🔥 CYBERPUNK: Ícone em formato Âmbar Elétrico (Urgência, precisão e foco total) -->
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%2309090b' stroke='%23f59e0b' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23f59e0b'/%3E%3Cpolygon points='16,16 23,9 21,7' fill='%23f59e0b' opacity='0.25'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
-    <!-- ✨ TREND: Fundo Preto Absoluto Líquido com gradiente de luz radial invisível (Sensação de elite) -->
-    <body class="bg-neutral-950 text-neutral-100 min-h-screen flex flex-col items-center justify-between font-sans p-4 relative overflow-x-hidden">
-        
-        <!-- Gradiente de Fundo de Luxo Aurora -->
-        <div class="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-neutral-900/40 rounded-full blur-[140px] pointer-events-none"></div>
+    <!-- 🔥 CYBERPUNK: Fundo em Preto Carbono absoluto (Terminal de Trading de Alta Performance) -->
+    <body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col items-center justify-between font-sans p-4">
 
-        <div class="flex-grow flex items-center justify-center w-full z-10">
-            <!-- ✨ TREND: Painel com efeito de Vidro Fosco Puro (Glassmorphism de alta retenção visual) -->
-            <div class="max-w-xl w-full bg-neutral-900/40 p-8 rounded-3xl shadow-2xl border border-neutral-800/60 my-8 backdrop-blur-md">
+        <div class="flex-grow flex items-center justify-center w-full">
+            <!-- 🔥 CYBERPUNK: Card em tom grafite fosco escuro com borda âmbar sutil -->
+            <div class="max-w-xl w-full bg-zinc-900/90 p-8 rounded-2xl shadow-2xl border border-amber-500/10 my-8 backdrop-blur-md">
                 <div class="text-center mb-6">
-                    <!-- ✨ TREND: Tipografia limpa, minimalista, branca e atemporal -->
-                    <h1 class="text-3xl font-extrabold text-white tracking-tight">Radar B3</h1>
-                    <p class="text-neutral-400 mt-2 text-sm font-medium tracking-wide">Monitoramento em tempo real.</p>
+                    <!-- 🔥 CYBERPUNK: Branding brilhando no Âmbar Elétrico (text-amber-400) para foco imediato -->
+                    <h1 class="text-3xl font-extrabold text-amber-400 tracking-tight">📡 Radar B3</h1>
+                    <p class="text-zinc-400 mt-2 text-sm font-medium">Monitoramento em tempo real.</p>
                 </div>
 
-                <div class="flex border-b border-neutral-800/60 mb-6">
-                    <button id="tabCadastro" class="flex-1 pb-3 text-sm font-bold text-white border-b-2 border-white focus:outline-none transition">
+                <div class="flex border-b border-zinc-800 mb-6">
+                    <button id="tabCadastro" class="flex-1 pb-3 text-sm font-bold text-amber-400 border-b-2 border-amber-400 focus:outline-none transition">
                         📝 Criar Alerta
                     </button>
-                    <button id="tabCancelamento" class="flex-1 pb-3 text-sm font-bold text-neutral-500 focus:outline-none hover:text-neutral-300 transition">
+                    <button id="tabCancelamento" class="flex-1 pb-3 text-sm font-bold text-zinc-500 focus:outline-none hover:text-zinc-300 transition">
                         🔍 Consultar & Cancelar
                     </button>
                 </div>
 
                 <form id="formB3" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
+                        <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
                         <div class="relative">
-                            <!-- Inputs com bordas finas e desfoque fosco escuro -->
                             <input type="text" id="ativo" placeholder="Digite e clique fora..." required
-                                class="w-full bg-neutral-950/80 border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-neutral-400 uppercase transition placeholder-neutral-700">
-                            <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-bold text-neutral-200 hidden"></span>
+                                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 uppercase transition placeholder-zinc-700">
+                            <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-bold text-amber-400 hidden"></span>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1">Seu E-mail para Alerta</label>
+                        <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Seu E-mail para Alerta</label>
                         <input type="email" id="email" placeholder="seuemail@exemplo.com" required
-                            class="w-full bg-neutral-950/80 border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-neutral-400 transition placeholder-neutral-700">
+                            class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 transition placeholder-zinc-700">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
+                            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
                             <input type="text" id="preco" placeholder="R$ 0,00" required
-                                class="w-full bg-neutral-950/80 border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-neutral-400 transition placeholder-neutral-700">
+                                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 transition placeholder-zinc-700">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1">Me avise quando for:</label>
-                            <select id="condicao" class="w-full bg-neutral-950/80 border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-neutral-400 transition">
+                            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Me avise quando for:</label>
+                            <select id="condicao" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 transition">
                                 <option value="1">📈 Maior ou Igual</option>
                                 <option value="0">📉 Menor ou Igual</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- ✨ TREND: Botão Branco Sólido Acetinado (O contraste máximo de luxo do minimalismo moderno) -->
-                    <button type="submit" class="w-full bg-white hover:bg-neutral-200 text-black font-bold py-3 px-4 rounded-lg transition duration-200 shadow-xl shadow-white/5">
+                    <!-- 🔥 CYBERPUNK: Botão Âmbar Sólido Magnético (O ponto de conversão definitivo para clique) -->
+                    <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg shadow-amber-500/10">
                         Ativar Monitoramento 🚀
                     </button>
                 </form>
@@ -286,28 +282,28 @@ def pagina_inicial():
                 <div id="containerCancelamento" class="space-y-4 hidden">
                     <form id="formSolicitarCancelamento" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1">Seu E-mail Cadastrado</label>
+                            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Seu E-mail Cadastrado</label>
                             <input type="email" id="emailCancelamento" placeholder="seuemail@exemplo.com" required
-                                class="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
                         </div>
-                        <button type="submit" class="w-full bg-neutral-800/40 hover:bg-neutral-800/60 text-neutral-200 font-bold py-3 px-4 rounded-lg border border-neutral-800 transition duration-200">
+                        <button type="submit" class="w-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold py-3 px-4 rounded-lg border border-blue-500/20 transition duration-200">
                             Solicitar Código de Consulta 🔑
                         </button>
                     </form>
 
-                    <form id="formAutenticarConsulta" class="space-y-4 hidden border-t border-neutral-800/60 pt-4">
+                    <form id="formAutenticarConsulta" class="space-y-4 hidden border-t border-zinc-800 pt-4">
                         <div>
-                            <label class="block text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-1">Insira o Código de 6 Dígitos</label>
+                            <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Insira o Código de 6 Dígitos</label>
                             <input type="text" id="codigoSeguranca" placeholder="Ex: 123456" maxlength="6" required
-                                class="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-4 py-2.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-neutral-400">
+                                class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-amber-500">
                         </div>
-                        <button type="submit" class="w-full bg-white text-black font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                        <button type="submit" class="w-full bg-amber-500 text-zinc-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
                             Buscar Meus Monitoramentos 🔍
                         </button>
                     </form>
 
-                    <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-neutral-800/60 pt-4">
-                        <label class="block text-xs font-semibold text-neutral-400 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
+                    <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-zinc-800 pt-4">
+                        <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
                         <div id="listaAlertasDinamica" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
                         <button id="btnConfirmarCancelamentoLote" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg hidden">
                             Cancelar 🔒
@@ -317,16 +313,16 @@ def pagina_inicial():
 
                 <div id="feedback" class="mt-6 hidden p-5 rounded-xl border"></div>
 
-                <div class="mt-6 pt-4 border-t border-neutral-800/40 flex justify-center">
+                <div class="mt-6 pt-4 border-t border-zinc-800/60 flex justify-center">
                     <ins class="adsbygoogle" style="display:block; min-width:300px; max-width:100%;" data-ad-client="ca-pub-9200830725654504" data-ad-slot="0000000000" data-ad-format="auto" data-full-width-responsive="true"></ins>
                     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                 </div>
             </div>
         </div>
 
-        <footer class="w-full text-center py-4 border-t border-neutral-900 bg-neutral-950/60 text-xs text-neutral-500 z-10">
+        <footer class="w-full text-center py-4 border-t border-zinc-900 bg-zinc-950/60 text-xs text-zinc-500">
             <p>&copy; 2026 Radar B3. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
-            <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-neutral-200 underline transition">Política de Privacidade</a></p>
+            <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-amber-400 underline transition">Política de Privacidade</a></p>
         </footer>
 
         <script>
@@ -345,16 +341,16 @@ def pagina_inicial():
             let precoLimpoParaEnvio = 0;
 
             tabCadastro.addEventListener('click', () => {
-                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-white border-b-2 border-white focus:outline-none";
-                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-neutral-500 focus:outline-none hover:text-slate-300";
+                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-amber-400 border-b-2 border-amber-400 focus:outline-none";
+                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-zinc-500 focus:outline-none hover:text-slate-300";
                 formB3.classList.remove('hidden');
                 containerCancelamento.classList.add('hidden');
                 feedback.classList.add('hidden');
             });
 
             tabCancelamento.addEventListener('click', () => {
-                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-white border-b-2 border-white focus:outline-none";
-                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-neutral-500 focus:outline-none hover:text-slate-300";
+                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-amber-400 border-b-2 border-amber-400 focus:outline-none";
+                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-zinc-500 focus:outline-none hover:text-slate-300";
                 formB3.classList.add('hidden');
                 containerCancelamento.classList.remove('hidden');
                 feedback.classList.add('hidden');
@@ -385,7 +381,7 @@ def pagina_inicial():
                     const dados = await response.json();
                     if (dados.status === "sucesso" && dados.preco_atual > 0) {
                         valorCotacaoAtual = dados.preco_atual;
-                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-neutral-200";
+                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-amber-400";
                         precoTempoReal.innerText = `Cotação Atual: R$ ${valorCotacaoAtual.toFixed(2)}`;
                         executarSugestaoCondicao();
                     } else {
@@ -403,7 +399,7 @@ def pagina_inicial():
             formB3.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (precoLimpoParaEnvio <= 0) { alert("Digite um preço alvo válido."); return; }
-                feedback.className = "mt-6 p-5 rounded-xl border bg-neutral-900/40 text-neutral-300 border-neutral-800 text-center text-sm font-medium";
+                feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
                 feedback.innerText = "Registrando o seu alerta de monitoramento...";
                 feedback.classList.remove('hidden');
 
@@ -421,10 +417,10 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-neutral-950 border-neutral-800 text-left space-y-3 shadow-inner";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-zinc-950 border-zinc-800 text-left space-y-3 shadow-inner border-amber-900/20";
                         feedback.innerHTML = `
-                            <div class="border-b border-neutral-800 pb-2"><span class="text-base font-bold text-white block">🎉 MONITORAMENTO ATIVADO!</span></div>
-                            <p class="text-sm text-white">O robô já iniciou o monitoramento. Detalhes enviados para: <span class="text-neutral-200 underline">${dados.email}</span></p>
+                            <div class="border-b border-zinc-800 pb-2"><span class="text-base font-bold text-amber-400 block">🎉 MONITORAMENTO ATIVADO!</span></div>
+                            <p class="text-sm text-white">O robô já iniciou o monitoramento. Detalhes enviados para: <span class="text-amber-400 underline">${dados.email}</span></p>
                         `;
                         formB3.reset();
                         precoTempoReal.classList.add('hidden');
@@ -440,7 +436,7 @@ def pagina_inicial():
 
             formSolicitarCancelamento.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                feedback.className = "mt-6 p-5 rounded-xl border bg-neutral-900/40 text-neutral-300 border-neutral-800 text-center text-sm font-medium";
+                feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
                 feedback.innerText = "Validando e-mail cadastrado...";
                 feedback.classList.remove('hidden');
 
@@ -453,7 +449,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-neutral-900/50 text-neutral-300 border-neutral-800 text-center text-sm font-medium";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/50 text-blue-300 border-blue-800 text-center text-sm font-medium";
                         feedback.innerText = dados.mensagem;
                         document.getElementById('formAutenticarConsulta').classList.remove('hidden');
                     } else {
@@ -488,15 +484,15 @@ def pagina_inicial():
                             const simboloCondicao = Number(alerta.condicao) === 1 ? "📈 ≥" : "📉 ≤";
                             
                             const itemHtml = `
-                                <label class="flex items-center justify-between p-3 bg-neutral-950 rounded-lg border border-neutral-800 hover:border-neutral-700 cursor-pointer transition">
+                                <label class="flex items-center justify-between p-3 bg-zinc-950 rounded-lg border border-zinc-800 hover:border-zinc-700 cursor-pointer transition">
                                     <div class="flex items-center gap-3">
-                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-neutral-500 checkbox-alerta-cancelar">
+                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-amber-500 checkbox-alerta-cancelar">
                                         <div class="flex flex-col">
                                             <span class="font-bold text-white uppercase">${alerta.ativo}</span>
-                                            <span class="text-[10px] text-neutral-500">Cotação Atual: <b class="text-neutral-200">${precoAtualTexto}</b></span>
+                                            <span class="text-[10px] text-zinc-500">Cotação Atual: <b class="text-amber-400">${precoAtualTexto}</b></span>
                                         </div>
                                     </div>
-                                    <span class="text-xs font-semibold text-neutral-400">Alvo: <span class="text-neutral-500 font-normal">${simboloCondicao}</span> R$ ${alerta.preco_alvo.toFixed(2)}</span>
+                                    <span class="text-xs font-semibold text-zinc-400">Alvo: <span class="text-zinc-500 font-normal">${simboloCondicao}</span> R$ ${alerta.preco_alvo.toFixed(2)}</span>
                                 </label>
                             `;
                             listaDiv.insertAdjacentHTML('beforeend', itemHtml);
@@ -531,7 +527,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-neutral-800/40 text-neutral-200 border-neutral-800 text-center text-sm font-bold shadow-inner";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-amber-500/20 text-amber-400 border-amber-500/30 text-center text-sm font-bold shadow-inner";
                         feedback.innerText = `🔒 ${dados.mensagem}`;
                         document.getElementById('formSolicitarCancelamento').reset();
                         document.getElementById('formAutenticarConsulta').reset();
@@ -556,12 +552,12 @@ def pagina_politica_privacidade():
     <head>
         <meta charset="UTF-8">
         <title>Política de Privacidade - Radar B3</title>
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23050505' stroke='%23ffffff' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%23e5e5e5' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%23a3a3a3' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23ffffff'/%3E%3C/svg%3E">
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%2309090b' stroke='%23f59e0b' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23f59e0b'/%3E%3Cpolygon points='16,16 23,9 21,7' fill='%23f59e0b' opacity='0.25'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body class="bg-neutral-950 text-slate-300 font-sans p-6 min-h-screen flex items-center justify-center">
-        <div class="max-w-2xl w-full bg-neutral-900 p-8 rounded-2xl border border-neutral-800 shadow-2xl space-y-4">
-            <h1 class="text-2xl font-bold text-white">🔒 Política de Privacidade</h1>
+    <body class="bg-zinc-950 text-slate-300 font-sans p-6 min-h-screen flex items-center justify-center">
+        <div class="max-w-2xl w-full bg-zinc-900 p-8 rounded-2xl border border-zinc-800 shadow-2xl space-y-4">
+            <h1 class="text-2xl font-bold text-amber-400">🔒 Política de Privacidade</h1>
             <p>O <b>Radar B3</b> respeita integralmente as normas de privacidade dos seus usuários. Processamos os e-mails informados de forma estrita e exclusiva para disparar os monitoramentos configurados de forma autônoma.</p>
         </div>
     </body>
@@ -620,9 +616,9 @@ def configuring_alerta(
 @app.post("/api/cancelar/solicitar")
 def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)):
     email_limpo = email.strip().lower()
-    alertas_actifs = db.query(Alerta).filter(Alerta.email == email_limpo).all()
+    alertas_ativos = db.query(Alerta).filter(Alerta.email == email_limpo).all()
     
-    if not alertas_actifs:
+    if not alertas_ativos:
         return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
         
     codigo_seguranca = str(random.randint(100000, 999999))
