@@ -58,7 +58,7 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 CACHE_COTCOES = {}
 CACHE_EXPIRACAO_SEGUNDOS = 60  
 
-EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-UR]{2,}$'
+EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
 # ==========================================
 # 2. MODELO DO BANCO DE DADOS
@@ -137,7 +137,7 @@ def enviar_email_confirmacao(destino, ativo, preco_atual, preco_alvo, condicao: 
     enviar_email_via_resend(destino, f"📡 Radar B3: Monitoramento {ativo} Ativado!", corpo)
 
 def enviar_email_b3(destino, ativo, preco_alvo, preco_atual, condicao: int):
-    acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == 1 else "🟢 OPORTUNIDADE DE COMPRA (Preço Low)"
+    acao_sugerida = "🚨 HORA DE VENDER (Preço Alto)" if condicao == 1 else "🟢 OPORTUNIDADE DE COMPRA (Preço Baixo)"
     corpo = (
         f"🚨 ALVO ATINGIDO!\n\n"
         f"O ativo {ativo} atingiu o objetivo configurado.\n\n"
@@ -173,7 +173,7 @@ def obter_preco_interno(ativo_nome: str) -> float:
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Scientific/Gecko) Chrome/122.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         }
         resposta = requests.get(url, headers=headers, timeout=4)
         preco_atual = None
@@ -196,7 +196,7 @@ def obter_preco_interno(ativo_nome: str) -> float:
         print(f"⚠️ Alerta ao buscar cotação de {nome_ativo}: {e}")
         
     if nome_ativo in CACHE_COTCOES:
-        return CACHE_COTCOES[nome_semibold]["preco"]
+        return CACHE_COTCOES[nome_ativo]["preco"]
     return 0.0
 
 # ==========================================
@@ -216,68 +216,62 @@ def pagina_inicial():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Radar B3 - Monitorando Ativos</title>
-        <!-- 🍷 BURGUNDY: Favicon customizado no Ouro Champagne e Vinho de Luxo -->
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%231a080e' stroke='%23fde047' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%23fef08a' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%23fef08a' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23fde047'/%3E%3C/svg%3E">
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23050505' stroke='%23d946ef' stroke-width='2.5'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%23f472b6' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%23f472b6' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23d946ef'/%3E%3Cpolygon points='16,16 23,9 21,7' fill='%23d946ef' opacity='0.25'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
-    <!-- 🍷 BURGUNDY: Fundo Vinho Profundo Premium Real (Estética Private Banking de Alta Renda) -->
-    <body class="bg-[#1a080e] text-stone-200 min-h-screen flex flex-col items-center justify-between font-sans p-4 relative overflow-x-hidden">
+    <body class="bg-neutral-950 text-neutral-100 min-h-screen flex flex-col items-center justify-between font-sans p-4 relative overflow-x-hidden">
         
-        <!-- Luz radial oculta para efeito de sofisticação -->
-        <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-[#360c1a]/40 rounded-full blur-[130px] pointer-events-none"></div>
+        <div class="absolute top-[-30%] left-[-20%] w-[600px] h-[600px] bg-fuchsia-900/10 rounded-full blur-[150px] pointer-events-none"></div>
 
         <div class="flex-grow flex items-center justify-center w-full z-10">
-            <!-- 🍷 BURGUNDY: Painel Ameixa Escura com efeito de vidro fosco e bordas acetinadas finas -->
-            <div class="max-w-xl w-full bg-[#260f16]/90 p-8 rounded-2xl shadow-2xl border border-amber-900/20 my-8 backdrop-blur-md">
+            <div class="max-w-xl w-full bg-[#0c0714] p-8 rounded-2xl shadow-2xl border border-fuchsia-500/20 my-8 backdrop-blur-md">
                 <div class="text-center mb-6">
-                    <!-- 🍷 BURGUNDY: Tipografia polida brilhando no Ouro Champagne (text-amber-200) -->
-                    <h1 class="text-3xl font-extrabold text-amber-200 tracking-tight">📡 Radar B3</h1>
-                    <p class="text-stone-400 mt-2 text-sm font-medium tracking-wide">Monitoramento em tempo real.</p>
+                    <h1 class="text-3xl font-black text-fuchsia-400 tracking-wider uppercase">📡 Radar B3</h1>
+                    <p class="text-neutral-400 mt-2 text-xs font-bold uppercase tracking-widest">Monitoramento Cyberpunk.</p>
                 </div>
 
-                <div class="flex border-b border-amber-950 mb-6">
-                    <button id="tabCadastro" class="flex-1 pb-3 text-sm font-bold text-amber-200 border-b-2 border-amber-200 focus:outline-none transition">
-                        📝 Criar Alerta
+                <div class="flex border-b border-neutral-900 mb-6">
+                    <button id="tabCadastro" class="flex-1 pb-3 text-sm font-black text-fuchsia-400 border-b-2 border-fuchsia-400 focus:outline-none transition uppercase tracking-wider">
+                        Criar Alerta
                     </button>
-                    <button id="tabCancelamento" class="flex-1 pb-3 text-sm font-bold text-stone-500 focus:outline-none hover:text-stone-300 transition">
-                        🔍 Consultar & Cancelar
+                    <button id="tabCancelamento" class="flex-1 pb-3 text-sm font-black text-neutral-600 focus:outline-none hover:text-neutral-400 transition uppercase tracking-wider">
+                        Consultar
                     </button>
                 </div>
 
                 <form id="formB3" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
+                        <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
                         <div class="relative">
                             <input type="text" id="ativo" placeholder="Digite e clique fora..." required
-                                class="w-full bg-[#14040a] border border-amber-950/60 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-amber-400 uppercase transition placeholder-stone-700">
-                            <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-bold text-amber-200 hidden"></span>
+                                class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white font-bold focus:outline-none focus:border-fuchsia-500 uppercase transition placeholder-neutral-800">
+                            <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-black text-fuchsia-400 hidden"></span>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">Seu E-mail para Alerta</label>
+                        <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Seu E-mail para Alerta</label>
                         <input type="email" id="email" placeholder="seuemail@exemplo.com" required
-                            class="w-full bg-[#14040a] border border-amber-950/60 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-amber-400 transition placeholder-stone-700">
+                            class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-fuchsia-500 transition placeholder-neutral-800">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
+                            <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
                             <input type="text" id="preco" placeholder="R$ 0,00" required
-                                class="w-full bg-[#14040a] border border-amber-950/60 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-amber-400 transition placeholder-stone-700">
+                                class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-fuchsia-500 transition placeholder-neutral-800">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">Me avise quando for:</label>
-                            <select id="condicao" class="w-full bg-[#14040a] border border-amber-950/60 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-amber-400 transition">
+                            <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Me avise quando for:</label>
+                            <select id="condicao" class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white font-bold focus:outline-none focus:border-fuchsia-500 transition">
                                 <option value="1">📈 Maior ou Igual</option>
                                 <option value="0">📉 Menor ou Igual</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- 🍷 BURGUNDY: Botão Dourado Fosco Champagne Absoluto (Exclusividade e prestígio de alta renda) -->
-                    <button type="submit" class="w-full bg-amber-300 hover:bg-amber-400 text-stone-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-xl shadow-amber-950/40">
+                    <button type="submit" class="w-full bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-black py-3 px-4 rounded-lg transition duration-200 uppercase tracking-wider shadow-lg shadow-fuchsia-500/10">
                         Ativar Monitoramento 🚀
                     </button>
                 </form>
@@ -285,47 +279,47 @@ def pagina_inicial():
                 <div id="containerCancelamento" class="space-y-4 hidden">
                     <form id="formSolicitarCancelamento" class="space-y-4">
                         <div>
-                            <label class="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">Seu E-mail Cadastrado</label>
+                            <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Seu E-mail Cadastrado</label>
                             <input type="email" id="emailCancelamento" placeholder="seuemail@exemplo.com" required
-                                class="w-full bg-[#14040a] border border-amber-950 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                                class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
                         </div>
-                        <button type="submit" class="w-full bg-amber-950/30 hover:bg-amber-950/50 text-amber-200 font-bold py-3 px-4 rounded-lg border border-amber-900/40 transition duration-200">
+                        <button type="submit" class="w-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold py-3 px-4 rounded-lg border border-blue-500/20 transition duration-200 uppercase tracking-wider text-xs">
                             Solicitar Código de Consulta 🔑
                         </button>
                     </form>
 
-                    <form id="formAutenticarConsulta" class="space-y-4 hidden border-t border-amber-950/40 pt-4">
+                    <form id="formAutenticarConsulta" class="space-y-4 hidden border-t border-neutral-800 pt-4">
                         <div>
-                            <label class="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-1">Insira o Código de 6 Dígitos</label>
+                            <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Insira o Código de 6 Dígitos</label>
                             <input type="text" id="codigoSeguranca" placeholder="Ex: 123456" maxlength="6" required
-                                class="w-full bg-[#14040a] border border-amber-950 rounded-lg px-4 py-2.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-amber-400">
+                                class="w-full bg-black border border-neutral-800 rounded-lg px-4 py-2.5 text-center text-xl font-black tracking-widest text-white focus:outline-none focus:border-fuchsia-500">
                         </div>
-                        <button type="submit" class="w-full bg-amber-300 text-stone-950 font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                        <button type="submit" class="w-full bg-fuchsia-600 text-white font-black py-3 px-4 rounded-lg transition duration-200 shadow-lg uppercase tracking-wider">
                             Buscar Meus Monitoramentos 🔍
                         </button>
                     </form>
 
-                    <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-amber-950/40 pt-4">
-                        <label class="block text-xs font-semibold text-stone-400 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
+                    <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-neutral-800 pt-4">
+                        <label class="block text-xs font-bold text-neutral-400 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
                         <div id="listaAlertasDinamica" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-                        <button id="btnConfirmarCancelamentoLote" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg hidden">
-                            Cancelar 🔒
+                        <button id="btnConfirmarCancelamentoLote" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg hidden uppercase tracking-wider text-sm">
+                            Cancelar Selecionados 🔒
                         </button>
                     </div>
                 </div>
 
                 <div id="feedback" class="mt-6 hidden p-5 rounded-xl border"></div>
 
-                <div class="mt-6 pt-4 border-t border-amber-950/20 flex justify-center">
+                <div class="mt-6 pt-4 border-t border-neutral-900 flex justify-center">
                     <ins class="adsbygoogle" style="display:block; min-width:300px; max-width:100%;" data-ad-client="ca-pub-9200830725654504" data-ad-slot="0000000000" data-ad-format="auto" data-full-width-responsive="true"></ins>
                     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                 </div>
             </div>
         </div>
 
-        <footer class="w-full text-center py-4 border-t border-[#260f16] bg-[#14040a]/60 text-xs text-stone-500 z-10">
+        <footer class="w-full text-center py-4 border-t border-neutral-900 bg-neutral-950/60 text-xs text-neutral-500">
             <p>&copy; 2026 Radar B3. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
-            <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-amber-200 underline transition">Política de Privacidade</a></p>
+            <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-fuchsia-400 underline transition">Política de Privacidade</a></p>
         </footer>
 
         <script>
@@ -344,16 +338,16 @@ def pagina_inicial():
             let precoLimpoParaEnvio = 0;
 
             tabCadastro.addEventListener('click', () => {
-                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-amber-200 border-b-2 border-amber-200 focus:outline-none";
-                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-stone-500 focus:outline-none hover:text-stone-300";
+                tabCadastro.className = "flex-1 pb-3 text-sm font-black text-fuchsia-400 border-b-2 border-fuchsia-400 focus:outline-none uppercase tracking-wider";
+                tabCancelamento.className = "flex-1 pb-3 text-sm font-black text-neutral-600 focus:outline-none hover:text-neutral-400 uppercase tracking-wider";
                 formB3.classList.remove('hidden');
                 containerCancelamento.classList.add('hidden');
                 feedback.classList.add('hidden');
             });
 
             tabCancelamento.addEventListener('click', () => {
-                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-amber-200 border-b-2 border-amber-200 focus:outline-none";
-                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-stone-500 focus:outline-none hover:text-stone-300";
+                tabCancelamento.className = "flex-1 pb-3 text-sm font-black text-fuchsia-400 border-b-2 border-fuchsia-400 focus:outline-none uppercase tracking-wider";
+                tabCadastro.className = "flex-1 pb-3 text-sm font-black text-neutral-600 focus:outline-none hover:text-neutral-400 uppercase tracking-wider";
                 formB3.classList.add('hidden');
                 containerCancelamento.classList.remove('hidden');
                 feedback.classList.add('hidden');
@@ -384,17 +378,17 @@ def pagina_inicial():
                     const dados = await response.json();
                     if (dados.status === "sucesso" && dados.preco_atual > 0) {
                         valorCotacaoAtual = dados.preco_atual;
-                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-amber-200";
-                        precoTempoReal.innerText = `Cotação Atual: R$ ${valorCotacaoAtual.toFixed(2)}`;
+                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-black text-fuchsia-400";
+                        precoTempoReal.innerText = `R$ ${valorCotacaoAtual.toFixed(2)}`;
                         executarSugestaoCondicao();
                     } else {
-                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-amber-600";
-                        precoTempoReal.innerText = "Ativo não encontrado";
+                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-amber-500";
+                        precoTempoReal.innerText = "Ausente";
                         valorCotacaoAtual = 0;
                     }
                 } catch (err) {
                     precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-red-500";
-                    precoTempoReal.innerText = "Erro de conexão";
+                    precoTempoReal.innerText = "Erro";
                     valorCotacaoAtual = 0;
                 }
             });
@@ -402,8 +396,8 @@ def pagina_inicial():
             formB3.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (precoLimpoParaEnvio <= 0) { alert("Digite um preço alvo válido."); return; }
-                feedback.className = "mt-6 p-5 rounded-xl border bg-[#360c1a]/40 text-amber-200 border-amber-900 text-center text-sm font-medium";
-                feedback.innerText = "Registrando o seu alerta de monitoramento...";
+                feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
+                feedback.innerText = "Registrando monitoramento no sistema...";
                 feedback.classList.remove('hidden');
 
                 try {
@@ -420,27 +414,27 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#14040a] border-amber-950 text-left space-y-3 shadow-inner";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-black border-neutral-900 text-left space-y-3 shadow-inner border-fuchsia-900/40";
                         feedback.innerHTML = `
-                            <div class="border-b border-amber-950 pb-2"><span class="text-base font-bold text-amber-200 block">🎉 MONITORAMENTO ATIVADO!</span></div>
-                            <p class="text-sm text-white">O robô já iniciou o monitoramento. Detalhes enviados para: <span class="text-amber-200 underline">${dados.email}</span></p>
+                            <div class="border-b border-neutral-800 pb-2"><span class="text-base font-black text-fuchsia-400 block">⚡ SISTEMA ATIVADO</span></div>
+                            <p class="text-xs font-bold text-white uppercase tracking-wider">O robô está em operação. Destino: <span class="text-fuchsia-400 underline">${dados.email}</span></p>
                         `;
                         formB3.reset();
                         precoTempoReal.classList.add('hidden');
                     } else {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-950/40 text-red-300 border-red-900 text-center text-sm font-medium";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
                         feedback.innerText = dados.mensagem;
                     }
                 } catch (err) {
-                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-950/40 text-red-300 border-red-900 text-center text-sm font-medium";
+                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
                     feedback.innerText = "Erro ao conectar com o servidor.";
                 }
             });
 
             formSolicitarCancelamento.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                feedback.className = "mt-6 p-5 rounded-xl border bg-[#360c1a]/40 text-amber-200 border-amber-900 text-center text-sm font-medium";
-                feedback.innerText = "Validando e-mail cadastrado...";
+                feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/40 text-blue-300 border-blue-800 text-center text-sm font-medium";
+                feedback.innerText = "Validando credenciais...";
                 feedback.classList.remove('hidden');
 
                 try {
@@ -452,15 +446,15 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#260f16] text-amber-200 border-amber-950 text-center text-sm font-medium";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-blue-950/50 text-blue-300 border-blue-800 text-center text-sm font-medium";
                         feedback.innerText = dados.mensagem;
                         document.getElementById('formAutenticarConsulta').classList.remove('hidden');
                     } else {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-950/40 text-red-300 border-red-900 text-center text-sm font-medium";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
                         feedback.innerText = dados.mensagem;
                     }
                 } catch (err) {
-                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-950/40 text-red-300 border-red-900 text-center text-sm font-medium";
+                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
                     feedback.innerText = "Erro de conexão.";
                 }
             });
@@ -487,15 +481,15 @@ def pagina_inicial():
                             const simboloCondicao = Number(alerta.condicao) === 1 ? "📈 ≥" : "📉 ≤";
                             
                             const itemHtml = `
-                                <label class="flex items-center justify-between p-3 bg-[#14040a] rounded-lg border border-amber-950/40 hover:border-amber-900 cursor-pointer transition">
+                                <label class="flex items-center justify-between p-3 bg-black rounded-lg border border-neutral-800 hover:border-neutral-700 cursor-pointer transition">
                                     <div class="flex items-center gap-3">
-                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-amber-500 checkbox-alerta-cancelar">
+                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-fuchsia-400 checkbox-alerta-cancelar">
                                         <div class="flex flex-col">
-                                            <span class="font-bold text-white uppercase">${alerta.ativo}</span>
-                                            <span class="text-[10px] text-stone-500">Cotação Atual: <b class="text-amber-200">${precoAtualTexto}</b></span>
+                                            <span class="font-black text-white uppercase tracking-wider">${alerta.ativo}</span>
+                                            <span class="text-[10px] text-neutral-500 font-bold uppercase">Mercado: <b class="text-fuchsia-400">${precoAtualTexto}</b></span>
                                         </div>
                                     </div>
-                                    <span class="text-xs font-semibold text-stone-400">Alvo: <span class="text-stone-500 font-normal">${simboloCondicao}</span> R$ ${alerta.preco_alvo.toFixed(2)}</span>
+                                    <span class="text-xs font-black text-neutral-400">Alvo: <span class="text-neutral-600 font-normal">${simboloCondicao}</span> R$ ${alerta.preco_alvo.toFixed(2)}</span>
                                 </label>
                             `;
                             listaDiv.insertAdjacentHTML('beforeend', itemHtml);
@@ -503,11 +497,11 @@ def pagina_inicial():
                         document.getElementById('wrapperListagemAlertas').classList.remove('hidden');
                         document.getElementById('btnConfirmarCancelamentoLote').classList.remove('hidden');
                     } else {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-950/40 text-red-300 border-red-900 text-center text-sm font-medium";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
                         feedback.innerText = dados.mensagem;
                     }
                 } catch (err) {
-                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-950/40 text-red-300 border-red-900 text-center text-sm font-medium";
+                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
                     feedback.innerText = "Erro na consulta dos dados.";
                 }
             });
@@ -530,7 +524,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-amber-950/40 text-amber-200 border-amber-900 text-center text-sm font-bold shadow-inner";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-fuchsia-400/20 text-fuchsia-400 border-fuchsia-400/30 text-center text-sm font-black shadow-inner uppercase tracking-wider";
                         feedback.innerText = `🔒 ${dados.mensagem}`;
                         document.getElementById('formSolicitarCancelamento').reset();
                         document.getElementById('formAutenticarConsulta').reset();
@@ -555,13 +549,13 @@ def pagina_politica_privacidade():
     <head>
         <meta charset="UTF-8">
         <title>Política de Privacidade - Radar B3</title>
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%231a080e' stroke='%23fde047' stroke-width='2'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%23fef08a' stroke-width='1.5' stroke-linecap='round'/%3E%3Cpath d='M16 10A6 6 0 0 1 22 16' fill='none' stroke='%23fef08a' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23fde047'/%3E%3C/svg%3E">
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23050505' stroke='%23d946ef' stroke-width='2.5'/%3E%3Cpath d='M16 6A10 10 0 0 1 26 16' fill='none' stroke='%23f472b6' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23d946ef'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body class="bg-[#1a080e] text-stone-300 font-sans p-6 min-h-screen flex items-center justify-center">
-        <div class="max-w-2xl w-full bg-[#260f16] p-8 rounded-2xl border border-amber-950/30 shadow-2xl space-y-4">
-            <h1 class="text-2xl font-bold text-amber-200">🔒 Política de Privacidade</h1>
-            <p>O <b>Radar B3</b> respeita integralmente as normas de privacidade dos seus usuários. Processamos os e-mails informados de forma estrita e exclusiva para disparar os monitoramentos configurados de forma autônoma.</p>
+    <body class="bg-neutral-950 text-neutral-300 font-sans p-6 min-h-screen flex items-center justify-center">
+        <div class="max-w-2xl w-full bg-[#0c0714] p-8 rounded-2xl border border-neutral-800 shadow-2xl space-y-4">
+            <h1 class="text-2xl font-black text-fuchsia-400 uppercase tracking-wider">🔒 Política de Privacidade</h1>
+            <p class="text-xs uppercase font-bold tracking-wider text-neutral-400">O <b>Radar B3</b> respeita integralmente as normas de privacidade dos seus usuários. Processamos os e-mails informados de forma estrita e exclusiva para disparar os monitoramentos configurados de forma autônoma.</p>
         </div>
     </body>
     </html>
