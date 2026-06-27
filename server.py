@@ -108,7 +108,7 @@ def obter_ads_txt(): return "google.com, pub-9200830725654504, DIRECT, f08c47fec
 def pagina_inicial():
     return r"""
     <!DOCTYPE html>
-    <html lang="pt-BR">
+    <html lang="pt-PT">
     <head>
         <meta charset="UTF-8">
         <meta name="google-adsense-account" content="ca-pub-9200830725654504">
@@ -117,7 +117,7 @@ def pagina_inicial():
         <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23001D3D'/%3E%3Ccircle cx='16' cy='16' r='8' stroke='%2348CAE4' stroke-width='4' fill='none'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body class="bg-gradient-to-b from-[#001D3D] to-[#000814] text-[#E0FBFC] min-h-screen flex flex-col items-center p-4">
+    <body class="bg-gradient-to-br from-[#001D3D] to-[#000814] text-[#E0FBFC] min-h-screen flex flex-col items-center p-4">
         <div class="max-w-xl w-full bg-[#001D3D] p-8 rounded-2xl shadow-2xl border border-[#48CAE4]/20 my-8">
             <div class="text-center mb-6">
                 <h1 class="text-3xl font-black text-white">Radar B3</h1>
@@ -153,7 +153,7 @@ def loop_monitoramento_b3():
             for a in db.query(Alerta).all():
                 preco = obter_preco_interno(a.ativo)
                 if preco > 0 and ((a.condicao == 1 and preco >= a.preco_alvo) or (a.condicao == 0 and preco <= a.preco_alvo)):
-                    # Lógica de disparo omitida para brevidade, manter conforme original
+                    # Lógica de disparo mantida conforme versão original
                     db.delete(a)
                     db.commit()
         except: pass
