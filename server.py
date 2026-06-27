@@ -216,26 +216,21 @@ def pagina_inicial():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Radar B3 - Monitorando Ativos</title>
-        <!-- 🏦 ITAU 3D ADVANCED: Ícone e assinatura visual em volumetria e profundidade -->
         <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23ec7000'/%3E%3Crect x='4' y='4' width='24' height='24' rx='4' fill='%23003366'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23ec7000' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23ffffff'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
-    <!-- 🏦 ITAU 3D ADVANCED: Gradiente linear profundo acentuado por um holofote de luz radial centralizado -->
-    <body class="bg-gradient-to-b from-[#ff7a00] via-[#ec7000] to-[#b34f00] text-white min-h-screen flex flex-col items-center justify-between font-sans p-4 relative overflow-hidden selection:bg-[#ff8c21] selection:text-white">
+    <body class="bg-gradient-to-b from-[#ff7a00] via-[#ec7000] to-[#b34f00] text-white min-h-screen flex flex-col items-center justify-between font-sans p-4 relative overflow-x-hidden selection:bg-[#ff8c21] selection:text-white">
         
-        <!-- Ponto de luz tridimensional no topo/centro para gerar profundidade de estúdio -->
         <div class="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-white/15 rounded-full blur-[120px] pointer-events-none"></div>
 
         <div class="flex-grow flex items-center justify-center w-full z-10">
-            <!-- 🏦 CARD 3D PREMIUM: Degradê de azul fechado com efeito de vidro reflexivo, borda iluminada (border-t-white/20) e sombra projetada ultra-pesada -->
-            <div class="max-w-xl w-full bg-gradient-to-b from-[#004488] to-[#002244] p-8 rounded-3xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] border-t border-l border-white/20 border-b border-r border-black/40 my-8 backdrop-blur-md transform transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_40px_75px_-20px_rgba(0,0,0,0.7)]">
+            <div class="max-w-xl w-full bg-gradient-to-br from-[#004488] to-[#002244] p-8 rounded-3xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] border-t border-l border-white/20 border-b border-r border-black/40 my-8 backdrop-blur-md">
                 <div class="text-center mb-6">
                     <h1 class="text-3xl font-black tracking-tight text-white drop-shadow-[0_3px_6px_rgba(0,0,0,0.5)]">Radar B3</h1>
-                    <p class="text-orange-200 mt-2 text-sm font-medium tracking-wide opacity-90">Monitoramento inteligente e alta performance patrimonial.</p>
+                    <p class="text-orange-200 mt-2 text-sm font-medium tracking-wide opacity-90">Monitoramento em tempo real.</p>
                 </div>
 
-                <!-- Abas com efeito de botão físico entalhado (shadow-inner) -->
                 <div class="flex border border-black/30 bg-[#001c3a] rounded-2xl p-1.5 shadow-[inner_0_2px_4px_rgba(0,0,0,0.4)] mb-6">
                     <button id="tabCadastro" class="flex-1 py-2.5 text-sm font-extrabold text-white bg-gradient-to-b from-white/15 to-white/5 rounded-xl shadow-md border-t border-white/10 focus:outline-none transition-all duration-200">
                         📝 Criar Alerta
@@ -249,7 +244,6 @@ def pagina_inicial():
                     <div>
                         <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1.5 opacity-80">Código do Ativo (ex: PETR4, MXRF11)</label>
                         <div class="relative">
-                            <!-- Inputs em baixo-relevo profundo para reforçar o visual 3D -->
                             <input type="text" id="ativo" placeholder="Digite e clique fora..." required
                                 class="w-full bg-[#00152c] border border-black/40 rounded-xl px-4 py-3.5 text-white font-bold focus:outline-none focus:border-[#ff8c21] focus:ring-4 focus:ring-[#ff8c21]/20 uppercase transition shadow-[inner_0_3px_6px_rgba(0,0,0,0.5)] placeholder-slate-600 text-sm">
                             <span id="precoTempoReal" class="absolute right-3 top-3.5 text-xs font-black text-white hidden"></span>
@@ -277,13 +271,12 @@ def pagina_inicial():
                         </div>
                     </div>
 
-                    <!-- BOTÃO MECÂNICO 3D: Degradê brilhante, relevo na base e animação física real de compressão ao ser pressionado -->
                     <button type="submit" class="w-full bg-gradient-to-b from-[#ff912b] via-[#ec7000] to-[#cb6000] hover:from-[#ff9c3f] hover:to-[#db6800] text-white font-black py-4 px-4 rounded-xl transition duration-100 transform active:scale-[0.99] active:translate-y-0.5 border-b-[5px] border-orange-900 active:border-b-0 shadow-[0_6px_15px_rgba(0,0,0,0.4)] tracking-wide uppercase text-sm">
-                        Ativar Monitoramento 🚀
+                        Ativar 🚀
                     </button>
                 </form>
 
-                <div id="containerCancelamento" class="space-y-4 hidden">
+                <div id="containerCancelamento" class="space-y-4 pb-4 hidden">
                     <form id="formSolicitarCancelamento" class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1 opacity-80">Seu E-mail Cadastrado</label>
@@ -308,9 +301,9 @@ def pagina_inicial():
 
                     <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-white/10 pt-4">
                         <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
-                        <div id="listaAlertasDinamica" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+                        <div id="listaAlertasDinamica" class="space-y-2 max-h-64 overflow-y-auto pr-1" style="scrollbar-width: thin;"></div>
                         <button id="btnConfirmarCancelamentoLote" class="w-full bg-gradient-to-b from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3.5 px-4 rounded-xl transition duration-150 border-b-4 border-red-800 active:border-b-0 active:translate-y-0.5 shadow-lg hidden uppercase tracking-wider text-sm">
-                            Cancelar Alertas Selecionados 🔒
+                            Cancelar 🔒
                         </button>
                     </div>
                 </div>
@@ -324,7 +317,7 @@ def pagina_inicial():
             </div>
         </div>
 
-        <footer class="w-full text-center py-4 border-t border-white/10 bg-black/15 text-xs text-orange-100/70 backdrop-blur-md z-10">
+        <footer class="w-full text-center py-4 border-t border-white/10 bg-black/15 text-xs text-orange-100/60 backdrop-blur-md z-10">
             <p>&copy; 2026 Radar B3. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
             <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-white underline transition-all">Política de Privacidade</a></p>
         </footer>
@@ -368,7 +361,7 @@ def pagina_inicial():
                 executarSugestaoCondicao();
             });
 
-            function executarSugestaoCondicao() {
+            function ejecutarSugestaoCondicao() {
                 if (valorCotacaoAtual === 0 || precoLimpoParaEnvio === 0) return;
                 selectCondicao.value = precoLimpoParaEnvio > valorCotacaoAtual ? "1" : "0";
             }
@@ -487,16 +480,17 @@ def pagina_inicial():
                             const precoAtualTexto = alerta.preco_atual > 0 ? `R$ ${alerta.preco_atual.toFixed(2)}` : "Carregando...";
                             const simboloCondicao = Number(alerta.condicao) === 1 ? "📈 ≥" : "📉 ≤";
                             
+                            // 📝 AJUSTE: Diferenciação de cores altamente profissional para isolar e destacar cada informação na listagem
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3.5 bg-[#00152c] rounded-xl border border-white/5 hover:border-white/10 cursor-pointer transition shadow-md">
                                     <div class="flex items-center gap-3">
                                         <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded-md accent-[#ec7000] checkbox-alerta-cancelar shadow-inner">
                                         <div class="flex flex-col">
                                             <span class="font-black text-white uppercase tracking-wider">${alerta.ativo}</span>
-                                            <span class="text-[10px] text-orange-200">Mercado: <b class="text-white">${precoAtualTexto}</b></span>
+                                            <span class="text-[10px] text-slate-400">Mercado: <b class="text-white">${precoAtualTexto}</b></span>
                                         </div>
                                     </div>
-                                    <span class="text-xs font-bold text-orange-100">Alvo: <span class="text-orange-200 font-normal">${simboloCondicao}</span> R$ ${alerta.preco_alvo.toFixed(2)}</span>
+                                    <span class="text-xs font-bold text-orange-200">Alvo: <span class="text-[#ff8c21] font-black">${simboloCondicao} R$ ${alerta.preco_alvo.toFixed(2)}</span></span>
                                 </label>
                             `;
                             listaDiv.insertAdjacentHTML('beforeend', itemHtml);
