@@ -173,7 +173,7 @@ def obter_preco_interno(ativo_nome: str) -> float:
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker_yahoo}"
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/122.0.0.0"
         }
         resposta = requests.get(url, headers=headers, timeout=4)
         preco_atual = None
@@ -216,12 +216,13 @@ def pagina_inicial():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Radar B3 - Monitorando Ativos</title>
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23ec7000'/%3E%3Crect x='4' y='4' width='24' height='24' rx='4' fill='%23003366'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23ec7000' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23ffffff'/%3E%3C/svg%3E">
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23003366'/%3E%3Cpolyline points='6,22 12,14 18,20 26,8' fill='none' stroke='%23ec7000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='26' cy='8' r='3' fill='%23ec7000'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
-    <body class="bg-gradient-to-b from-[#ff7a00] to-[#b34f00] text-white min-h-screen flex flex-col items-center justify-between font-sans p-4 relative selection:bg-[#ff8c21] selection:text-white">
+    <body class="bg-gradient-to-b from-[#ff7a00] to-[#b34f00] text-white min-h-screen flex flex-col items-center justify-between font-sans p-4 relative overflow-x-hidden selection:bg-[#ff8c21] selection:text-white">
         
+        <div class="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-white/15 rounded-full blur-[120px] pointer-events-none"></div>
+
         <div class="flex-grow flex items-center justify-center w-full z-10">
             <div class="max-w-xl w-full bg-gradient-to-b from-[#003366] to-[#001c3a] p-8 rounded-2xl shadow-lg border border-white/10 my-8">
                 <div class="text-center mb-6">
@@ -315,7 +316,7 @@ def pagina_inicial():
             </div>
         </div>
 
-        <footer class="w-full text-center py-4 border-t border-white/5 bg-black/5 text-xs text-orange-100/60 backdrop-blur-md z-10">
+        <footer class="w-full text-center py-4 border-t border-white/5 bg-black/15 text-xs text-orange-100/60 backdrop-blur-md z-10">
             <p>&copy; 2026 Radar B3. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
             <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-white underline transition-all">Política de Privacidade</a></p>
         </footer>
@@ -478,7 +479,6 @@ def pagina_inicial():
                             const precoAtualTexto = alerta.preco_atual > 0 ? `R$ ${alerta.preco_atual.toFixed(2)}` : "Carregando...";
                             const simboloCondicao = Number(alerta.condicao) === 1 ? "📈 ≥" : "📉 ≤";
                             
-                            // 📝 AJUSTE: Cor do ativo alterada para text-amber-400 (Amarelo/Laranja Ouro bem definido)
                             const itemHtml = `
                                 <label class="flex items-center justify-between p-3.5 bg-[#001224] rounded-xl border border-white/5 hover:border-white/10 cursor-pointer transition shadow-sm">
                                     <div class="flex items-center gap-3">
@@ -594,7 +594,7 @@ def configuring_alerta(
     if alerta_duplicado:
         return {
             "status": "erro", 
-            "mensagem": f"Você já possui um monitoramento active exatamente igual para {ticker} nesta mesma condição e preço alvo!"
+            "mensagem": f"Você já possui um monitoramento ativo exatamente igual para {ticker} nesta mesma condição e preço alvo!"
         }
 
     preco_atual = obter_preco_interno(ticker)
