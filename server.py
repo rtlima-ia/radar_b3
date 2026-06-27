@@ -216,28 +216,27 @@ def pagina_inicial():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Radar B3 - Monitorando Ativos</title>
-        <!-- 🏦 ITAU PALETTE: Favicon customizado nas cores oficiais do banco (Laranja e Azul) -->
+        <!-- 🏦 ITAU 3D: Favicon customizado corporativo em profundidade -->
         <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23ec7000'/%3E%3Crect x='4' y='4' width='24' height='24' rx='4' fill='%23003366'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23ec7000' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23ffffff'/%3E%3C/svg%3E">
         <script src="https://cdn.tailwindcss.com"></script>
         <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9200830725654504" crossorigin="anonymous"></script>
     </head>
-    <!-- 🏦 ITAU PALETTE: Fundo Laranja Oficial (#ec7000) de Alto Impacto Institucional -->
-    <body class="bg-[#ec7000] text-white min-h-screen flex flex-col items-center justify-between font-sans p-4">
+    <!-- 🏦 ITAU 3D: Fundo em Degradê Radial Esférico do Laranja Oficial para simular volumetria e iluminação de estúdio -->
+    <body class="bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#ff8c21] to-[#ec7000] text-white min-h-screen flex flex-col items-center justify-between font-sans p-4 select-none">
 
         <div class="flex-grow flex items-center justify-center w-full">
-            <!-- 🏦 ITAU PALETTE: Card Central no Azul Escuro Institucional Clássico (#003366) -->
-            <div class="max-w-xl w-full bg-[#003366] p-8 rounded-2xl shadow-2xl border border-white/10 my-8">
+            <!-- 🏦 ITAU 3D: Card em Degradê de Azul Profundo com borda superior iluminada e sombra tripla pesada para efeito 3D real de elevação -->
+            <div class="max-w-xl w-full bg-gradient-to-br from-[#003c77] to-[#002244] p-8 rounded-3xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] border-t border-white/20 border-x border-white/5 my-8 transform transition duration-500 hover:scale-[1.01]">
                 <div class="text-center mb-6">
-                    <!-- Título em Destaque Branco Puro -->
-                    <h1 class="text-3xl font-black tracking-tight text-white">Radar B3</h1>
-                    <p class="text-orange-200 mt-2 text-sm font-medium">Monitoramento em tempo real com solidez financeira.</p>
+                    <h1 class="text-3xl font-black tracking-tight text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">Radar B3</h1>
+                    <p class="text-orange-200 mt-2 text-sm font-medium">Monitoramento inteligente e solidez patrimonial.</p>
                 </div>
 
-                <div class="flex border-b border-white/10 mb-6">
-                    <button id="tabCadastro" class="flex-1 pb-3 text-sm font-bold text-white border-b-2 border-white focus:outline-none transition">
+                <div class="flex border-b border-white/10 mb-6 bg-black/20 rounded-xl p-1 shadow-inner">
+                    <button id="tabCadastro" class="flex-1 py-2.5 text-sm font-bold text-white bg-white/10 rounded-lg shadow-md focus:outline-none transition-all duration-200">
                         📝 Criar Alerta
                     </button>
-                    <button id="tabCancelamento" class="flex-1 pb-3 text-sm font-bold text-orange-200/60 focus:outline-none hover:text-white transition">
+                    <button id="tabCancelamento" class="flex-1 py-2.5 text-sm font-bold text-orange-200/60 focus:outline-none hover:text-white transition-all duration-200">
                         🔍 Consultar & Cancelar
                     </button>
                 </div>
@@ -246,36 +245,36 @@ def pagina_inicial():
                     <div>
                         <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Código do Ativo (ex: PETR4, MXRF11)</label>
                         <div class="relative">
-                            <!-- Inputs com fundo azul muito fechado e foco laranja para identidade visual corporativa perfeita -->
+                            <!-- Inputs com cavidade 3D (shadow-inner) e bordas finas responsivas -->
                             <input type="text" id="ativo" placeholder="Digite e clique fora..." required
-                                class="w-full bg-[#002244] border border-white/10 rounded-lg px-4 py-2.5 text-white font-bold focus:outline-none focus:border-[#ec7000] uppercase transition placeholder-slate-500">
-                            <span id="precoTempoReal" class="absolute right-3 top-3 text-xs font-bold text-white hidden"></span>
+                                class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-white font-bold focus:outline-none focus:border-[#ff8c21] focus:ring-2 focus:ring-[#ff8c21]/20 uppercase transition shadow-inner placeholder-slate-600">
+                            <span id="precoTempoReal" class="absolute right-3 top-3.5 text-xs font-bold text-white hidden"></span>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Seu E-mail para Alerta</label>
                         <input type="email" id="email" placeholder="seuemail@exemplo.com" required
-                            class="w-full bg-[#002244] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#ec7000] transition placeholder-slate-500">
+                            class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#ff8c21] focus:ring-2 focus:ring-[#ff8c21]/20 transition shadow-inner placeholder-slate-600">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Preço Alvo Desejado</label>
                             <input type="text" id="preco" placeholder="R$ 0,00" required
-                                class="w-full bg-[#002244] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#ec7000] transition placeholder-slate-500">
+                                class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#ff8c21] focus:ring-2 focus:ring-[#ff8c21]/20 transition shadow-inner placeholder-slate-600">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Me avise quando for:</label>
-                            <select id="condicao" class="w-full bg-[#002244] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#ec7000] transition">
-                                <option value="1" class="bg-[#003366]">📈 Maior ou Igual</option>
-                                <option value="0" class="bg-[#003366]">📉 Menor ou Igual</option>
+                            <select id="condicao" class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-white font-bold focus:outline-none focus:border-[#ff8c21] focus:ring-2 focus:ring-[#ff8c21]/20 transition shadow-inner">
+                                <option value="1" class="bg-[#002244]">📈 Maior ou Igual</option>
+                                <option value="0" class="bg-[#002244]">📉 Menor ou Igual</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- 🏦 ITAU PALETTE: Botão no Laranja Oficial (#ec7000) gerando o contraste máximo e clique imediato -->
-                    <button type="submit" class="w-full bg-[#ec7000] hover:bg-[#d66200] text-white font-black py-3 px-4 rounded-lg transition duration-200 shadow-lg shadow-black/20">
+                    <!-- 🏦 ITAU 3D: Botão com degradê linear descendente, borda de relevo 3D na base e gatilho de compressão mecânica ao clicar (active) -->
+                    <button type="submit" class="w-full bg-gradient-to-b from-[#ff8c21] to-[#ec7000] hover:from-[#ff9d42] hover:to-[#f57500] text-white font-black py-3.5 px-4 rounded-xl transition duration-150 transform active:translate-y-0.5 border-b-4 border-orange-800 active:border-b-0 shadow-lg shadow-black/30 tracking-wide text-center">
                         Ativar Monitoramento 🚀
                     </button>
                 </form>
@@ -285,9 +284,9 @@ def pagina_inicial():
                         <div>
                             <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Seu E-mail Cadastrado</label>
                             <input type="email" id="emailCancelamento" placeholder="seuemail@exemplo.com" required
-                                class="w-full bg-[#002244] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500">
+                                class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 shadow-inner">
                         </div>
-                        <button type="submit" class="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-4 rounded-lg border border-white/20 transition duration-200 text-xs">
+                        <button type="submit" class="w-full bg-gradient-to-b from-white/10 to-white/5 hover:from-white/20 hover:to-white/10 text-white font-bold py-3 px-4 rounded-xl border border-white/10 transition duration-150 active:translate-y-0.5 text-xs uppercase tracking-wider shadow-md">
                             Solicitar Código de Consulta 🔑
                         </button>
                     </form>
@@ -296,9 +295,9 @@ def pagina_inicial():
                         <div>
                             <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1">Insira o Código de 6 Dígitos</label>
                             <input type="text" id="codigoSeguranca" placeholder="Ex: 123456" maxlength="6" required
-                                class="w-full bg-[#002244] border border-white/10 rounded-lg px-4 py-2.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-[#ec7000]">
+                                class="w-full bg-[#001833] border border-black/30 rounded-xl px-4 py-3 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-[#ff8c21] shadow-inner">
                         </div>
-                        <button type="submit" class="w-full bg-[#ec7000] text-white font-black py-3 px-4 rounded-lg transition duration-200 shadow-lg">
+                        <button type="submit" class="w-full bg-gradient-to-b from-[#ff8c21] to-[#ec7000] text-white font-black py-3.5 px-4 rounded-xl transition duration-150 border-b-4 border-orange-800 active:border-b-0 active:translate-y-0.5 shadow-lg">
                             Buscar Meus Monitoramentos 🔍
                         </button>
                     </form>
@@ -306,22 +305,22 @@ def pagina_inicial():
                     <div id="wrapperListagemAlertas" class="space-y-4 hidden border-t border-white/10 pt-4">
                         <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider">Selecione o que deseja cancelar:</label>
                         <div id="listaAlertasDinamica" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-                        <button id="btnConfirmarCancelamentoLote" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-lg hidden">
-                            Cancelar 🔒
+                        <button id="btnConfirmarCancelamentoLote" class="w-full bg-gradient-to-b from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-3.5 px-4 rounded-xl transition duration-150 border-b-4 border-red-800 active:border-b-0 active:translate-y-0.5 shadow-lg hidden uppercase tracking-wider text-sm">
+                            Cancelar Alertas Selecionados 🔒
                         </button>
                     </div>
                 </div>
 
-                <div id="feedback" class="mt-6 hidden p-5 rounded-xl border"></div>
+                <div id="feedback" class="mt-6 hidden p-5 rounded-xl border shadow-inner transition-all duration-300"></div>
 
-                <div class="mt-6 pt-4 border-t border-white/10 flex justify-center">
+                <div class="mt-6 pt-4 border-t border-white/5 flex justify-center">
                     <ins class="adsbygoogle" style="display:block; min-width:300px; max-width:100%;" data-ad-client="ca-pub-9200830725654504" data-ad-slot="0000000000" data-ad-format="auto" data-full-width-responsive="true"></ins>
                     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
                 </div>
             </div>
         </div>
 
-        <footer class="w-full text-center py-4 border-t border-white/10 bg-[#002244]/20 text-xs text-orange-100/70">
+        <footer class="w-full text-center py-4 border-t border-white/10 bg-black/10 text-xs text-orange-100/60 backdrop-blur-sm z-10">
             <p>&copy; 2026 Radar B3. Todos os direitos reservados. O site não realiza recomendações de investimentos.</p>
             <p class="mt-1"><a href="/politica-de-privacidade" target="_blank" class="hover:text-white underline transition">Política de Privacidade</a></p>
         </footer>
@@ -342,16 +341,16 @@ def pagina_inicial():
             let precoLimpoParaEnvio = 0;
 
             tabCadastro.addEventListener('click', () => {
-                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-white border-b-2 border-white focus:outline-none";
-                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-orange-200/60 focus:outline-none hover:text-white";
+                tabCadastro.className = "flex-1 py-2.5 text-sm font-bold text-white bg-white/10 rounded-lg shadow-md focus:outline-none transition-all duration-200";
+                tabCancelamento.className = "flex-1 py-2.5 text-sm font-bold text-orange-200/60 focus:outline-none hover:text-white transition-all duration-200";
                 formB3.classList.remove('hidden');
                 containerCancelamento.classList.add('hidden');
                 feedback.classList.add('hidden');
             });
 
             tabCancelamento.addEventListener('click', () => {
-                tabCancelamento.className = "flex-1 pb-3 text-sm font-bold text-white border-b-2 border-white focus:outline-none";
-                tabCadastro.className = "flex-1 pb-3 text-sm font-bold text-orange-200/60 focus:outline-none hover:text-white";
+                tabCancelamento.className = "flex-1 py-2.5 text-sm font-bold text-white bg-white/10 rounded-lg shadow-md focus:outline-none transition-all duration-200";
+                tabCadastro.className = "flex-1 py-2.5 text-sm font-bold text-orange-200/60 focus:outline-none hover:text-white transition-all duration-200";
                 formB3.classList.add('hidden');
                 containerCancelamento.classList.remove('hidden');
                 feedback.classList.add('hidden');
@@ -373,7 +372,7 @@ def pagina_inicial():
             inputAtivo.addEventListener('blur', async () => {
                 const ativoVal = inputAtivo.value.trim();
                 if (!ativoVal) return;
-                precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-orange-200 animate-pulse";
+                precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-bold text-orange-200 animate-pulse";
                 precoTempoReal.innerText = "Buscando...";
                 precoTempoReal.classList.remove('hidden');
                 try {
@@ -382,16 +381,16 @@ def pagina_inicial():
                     const dados = await response.json();
                     if (dados.status === "sucesso" && dados.preco_atual > 0) {
                         valorCotacaoAtual = dados.preco_atual;
-                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-white bg-[#ec7000] px-2 py-0.5 rounded";
+                        precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-bold text-white bg-[#ec7000] px-2.5 py-0.5 rounded-lg shadow";
                         precoTempoReal.innerText = `R$ ${valorCotacaoAtual.toFixed(2)}`;
                         executarSugestaoCondicao();
                     } else {
-                        precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-red-300";
+                        precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-bold text-red-300";
                         precoTempoReal.innerText = "Ausente";
                         valorCotacaoAtual = 0;
                     }
                 } catch (err) {
-                    precoTempoReal.className = "absolute right-3 top-3 text-xs font-bold text-red-400";
+                    precoTempoReal.className = "absolute right-3 top-3.5 text-xs font-bold text-red-400";
                     precoTempoReal.innerText = "Erro";
                     valorCotacaoAtual = 0;
                 }
@@ -400,7 +399,7 @@ def pagina_inicial():
             formB3.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 if (precoLimpoParaEnvio <= 0) { alert("Digite um preço alvo válido."); return; }
-                feedback.className = "mt-6 p-5 rounded-xl border bg-white/5 text-orange-100 border-white/10 text-center text-sm font-medium";
+                feedback.className = "mt-6 p-5 rounded-xl border bg-white/5 text-orange-100 border-white/10 text-center text-sm font-medium shadow-inner animate-pulse";
                 feedback.innerText = "Registrando monitoramento no sistema...";
                 feedback.classList.remove('hidden');
 
@@ -418,7 +417,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#002244] border-white/10 text-left space-y-3 shadow-inner";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#001833] border-white/10 text-left space-y-3 shadow-inner";
                         feedback.innerHTML = `
                             <div class="border-b border-white/10 pb-2"><span class="text-base font-bold text-white block">🎉 MONITORAMENTO ATIVADO</span></div>
                             <p class="text-sm text-orange-100">O robô está em operação. Destino: <span class="text-white underline font-bold">${dados.email}</span></p>
@@ -426,18 +425,18 @@ def pagina_inicial():
                         formB3.reset();
                         precoTempoReal.classList.add('hidden');
                     } else {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium shadow-inner";
                         feedback.innerText = dados.mensagem;
                     }
                 } catch (err) {
-                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium shadow-inner";
                     feedback.innerText = "Erro ao conectar com o servidor.";
                 }
             });
 
             formSolicitarCancelamento.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                feedback.className = "mt-6 p-5 rounded-xl border bg-white/5 text-orange-100 border-white/10 text-center text-sm font-medium";
+                feedback.className = "mt-6 p-5 rounded-xl border bg-white/5 text-orange-100 border-white/10 text-center text-sm font-medium shadow-inner animate-pulse";
                 feedback.innerText = "Validando credenciais...";
                 feedback.classList.remove('hidden');
 
@@ -450,15 +449,15 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-white/10 text-white border-white/20 text-center text-sm font-medium";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#001833] text-white border-white/10 text-center text-sm font-medium shadow-inner";
                         feedback.innerText = dados.mensagem;
                         document.getElementById('formAutenticarConsulta').classList.remove('hidden');
                     } else {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium shadow-inner";
                         feedback.innerText = dados.mensagem;
                     }
                 } catch (err) {
-                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium shadow-inner";
                     feedback.innerText = "Erro de conexão.";
                 }
             });
@@ -485,9 +484,9 @@ def pagina_inicial():
                             const simboloCondicao = Number(alerta.condicao) === 1 ? "📈 ≥" : "📉 ≤";
                             
                             const itemHtml = `
-                                <label class="flex items-center justify-between p-3 bg-[#002244] rounded-lg border border-white/10 hover:border-white/20 cursor-pointer transition">
+                                <label class="flex items-center justify-between p-3 bg-[#001833] rounded-xl border border-white/5 hover:border-white/10 cursor-pointer transition shadow-sm">
                                     <div class="flex items-center gap-3">
-                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded accent-[#ec7000] checkbox-alerta-cancelar">
+                                        <input type="checkbox" value="${alerta.id}" class="w-4 h-4 rounded-md accent-[#ec7000] checkbox-alerta-cancelar shadow-inner">
                                         <div class="flex flex-col">
                                             <span class="font-black text-white uppercase tracking-wider">${alerta.ativo}</span>
                                             <span class="text-[10px] text-orange-200">Mercado: <b class="text-white">${precoAtualTexto}</b></span>
@@ -501,11 +500,11 @@ def pagina_inicial():
                         document.getElementById('wrapperListagemAlertas').classList.remove('hidden');
                         document.getElementById('btnConfirmarCancelamentoLote').classList.remove('hidden');
                     } else {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium shadow-inner";
                         feedback.innerText = dados.mensagem;
                     }
                 } catch (err) {
-                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium";
+                    feedback.className = "mt-6 p-5 rounded-xl border bg-red-900/40 text-red-300 border-red-800 text-center text-sm font-medium shadow-inner";
                     feedback.innerText = "Erro na consulta dos dados.";
                 }
             });
@@ -528,7 +527,7 @@ def pagina_inicial():
                     });
                     const dados = await response.json();
                     if (dados.status === "sucesso") {
-                        feedback.className = "mt-6 p-5 rounded-xl border bg-white/10 text-white border-white/20 text-center text-sm font-bold shadow-inner uppercase tracking-wider";
+                        feedback.className = "mt-6 p-5 rounded-xl border bg-[#001833] text-white border-white/10 text-center text-sm font-bold shadow-inner uppercase tracking-wider shadow-inner";
                         feedback.innerText = `🔒 ${dados.mensagem}`;
                         document.getElementById('formSolicitarCancelamento').reset();
                         document.getElementById('formAutenticarConsulta').reset();
