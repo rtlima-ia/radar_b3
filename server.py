@@ -40,9 +40,12 @@ EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alerta@b3alerta.com.br")
 @asynccontextmanager
 async def lifespan(app_fastapi: FastAPI):
     Base.metadata.create_all(bind=engine)
-    thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
-    thread_robo.start()
     yield
+
+# Inicia o robô de monitoramento de forma independente e robusta
+thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
+thread_robo.start()
+print("🤖 Robô de monitoramento iniciado com sucesso!")
 
 app = FastAPI(title="Radar B3 - Monitorando Ativos", lifespan=lifespan)
 
