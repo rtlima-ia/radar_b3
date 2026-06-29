@@ -37,53 +37,11 @@ Base = declarative_base()
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE", "alerta@b3alerta.com.br")
 
-# --- CORREÇÃO: Inicialização Robusta do Robô ---
-def loop_monitoramento_b3():
-    print("🤖 Robô de monitoramento de ativos B3 iniciado!")
-    while True:
-        try:
-            db = SessionLocal()
-            try:
-                alertas_ativos = db.query(Alerta).all()
-                if alertas_ativos:
-                    ativos_unicos = list(set([a.ativo for a in alertas_ativos]))
-                    cotacoes = {}
-
-                    with ThreadPoolExecutor(max_workers=12) as executor:
-                        resultados = executor.map(obter_preco_interno, ativos_unicos)
-                        for ativo, preco in zip(ativos_unicos, resultados):
-                            if preco > 0:
-                                cotacoes[ativo] = preco
-
-                    for alerta in alertas_ativos:
-                        preco_atual = cotacoes.get(alerta.ativo)
-                        if preco_atual is None: continue
-
-                        disparar = False
-                        if alerta.condicao == 1 and preco_atual >= alerta.preco_alvo: disparar = True
-                        elif alerta.condicao == 0 and preco_atual <= alerta.preco_alvo: disparar = True
-
-                        if disparar:
-                            try:
-                                enviar_email_b3(alerta.email, alerta.ativo, alerta.preco_alvo, preco_atual, alerta.condicao)
-                                db.delete(alerta)
-                                db.commit()
-                            except Exception as inner_e:
-                                print(f"⚠️ Falha no disparo: {inner_e}")
-                                db.rollback()
-            finally:
-                db.close()
-        except Exception as e:
-            print(f"💥 Erro crítico no loop: {e}")
-        time.sleep(300)
-
-thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
-thread_robo.start()
-# -----------------------------------------------
-
 @asynccontextmanager
 async def lifespan(app_fastapi: FastAPI):
     Base.metadata.create_all(bind=engine)
+    thread_robo = threading.Thread(target=loop_monitoramento_b3, daemon=True)
+    thread_robo.start()
     yield
 
 app = FastAPI(title="Radar B3 - Monitorando Ativos", lifespan=lifespan)
@@ -99,6 +57,7 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 CACHE_COTCOES = {}
 CACHE_EXPIRACAO_SEGUNDOS = 60  
+
 EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
 # ==========================================
@@ -107,6 +66,7 @@ EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
 class Alerta(Base):
     __tablename__ = "alertas"
+
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, index=True, nullable=False)
     ativo = Column(String, index=True, nullable=False)
@@ -116,6 +76,7 @@ class Alerta(Base):
 
 class CodigoCancelamento(Base):
     __tablename__ = "codigos_cancelamento"
+
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, index=True, nullable=False)
     codigo = Column(String, nullable=False)
@@ -123,14 +84,10 @@ class CodigoCancelamento(Base):
 
 def get_db():
     db = SessionLocal()
-    try: yield db
-    finally: db.close()
-
-# ==========================================
-# 3. FUNÇÕES E ROTAS (MANTIDAS IGUAIS AO ORIGINAL)
-# ==========================================
-# [O RESTANTE DO CÓDIGO PERMANECE IDENTICO AO QUE VOCÊ PEGOU NO GITHUB]
-# (As funções de envio de email, obter_preco_interno e rotas devem ser coladas aqui)
+    try:
+        yield db
+    finally:
+        db.close()
 
 # ==========================================
 # 3. FUNÇÕES DE ENVIO DE E-MAIL (BREVO API v3)
