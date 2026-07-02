@@ -290,8 +290,8 @@ def pagina_inicial():
 
                     <form id="formAutenticarConsulta" class="space-y-4 hidden border-t border-white/10 pt-4">
                         <div>
-                            <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1 opacity-80">Insira o Código de 6 Dígitos</label>
-                            <input type="text" id="codigoSeguranca" placeholder="Ex: 123456" maxlength="6" required
+                            <label class="block text-xs font-bold text-orange-100 uppercase tracking-wider mb-1 opacity-80">Insira o Código de 3 Dígitos</label>
+                            <input type="text" id="codigoSeguranca" placeholder="Ex: 123" maxlength="3" required
                                 class="w-full bg-[#001224] border border-white/5 rounded-xl px-4 py-3.5 text-center text-xl font-bold tracking-widest text-white focus:outline-none focus:border-[#ff8c21]">
                         </div>
                         <button type="submit" class="w-full bg-gradient-to-b from-[#ff912b] to-[#ec7000] text-white font-black py-4 px-4 rounded-xl transition duration-100 shadow-md uppercase text-sm tracking-wide">
@@ -617,7 +617,7 @@ def solicitar_cancelamento(email: str = Form(...), db: Session = Depends(get_db)
     if not alertas_ativos:
         return {"status": "erro", "mensagem": "Não encontramos nenhum monitoramento ativo para este e-mail."}
         
-    codigo_seguranca = str(random.randint(100000, 999999))
+    codigo_seguranca = str(random.randint(100, 999))
     db.query(CodigoCancelamento).filter(CodigoCancelamento.email == email_limpo).delete()
     
     novo_codigo = CodigoCancelamento(email=email_limpo, codigo=codigo_seguranca)
